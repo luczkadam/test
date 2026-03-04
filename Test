@@ -1,0 +1,13 @@
+/var/log/stunnel/*.log {
+    daily
+    rotate 30
+    dateext
+    missingok
+    notifempty
+    copytruncate
+    
+    # Skrypt wykonujący się po każdej rotacji
+    postrotate
+        /usr/bin/find /var/log/stunnel -type f -name "*.log-*" -mtime +2 ! -name "*.gz" -exec gzip -f {} \;
+    endscript
+}
