@@ -3,7 +3,7 @@ test example 6
 
 #!/bin/bash
 
-PAKIET="nano 1603017078"
+PAKIET="nano"
 
 # Sprawdzamy w bazie rpm, czy pakiet istnieje. 
 # Przekierowujemy wyjście do /dev/null, aby skrypt nie śmiecił w konsoli.
