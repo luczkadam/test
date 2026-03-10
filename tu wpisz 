@@ -1,1 +1,14 @@
 test example 6
+
+
+#!/bin/bash
+
+PAKIET="nano"
+
+# Sprawdzamy w bazie rpm, czy pakiet istnieje. 
+# Przekierowujemy wyjście do /dev/null, aby skrypt nie śmiecił w konsoli.
+if rpm -q "$PAKIET" > /dev/null 2>&1; then
+    echo "✅ Pakiet '$PAKIET' jest zainstalowany w systemie."
+else
+    echo "❌ Pakiet '$PAKIET' NIE jest zainstalowany."
+fi
