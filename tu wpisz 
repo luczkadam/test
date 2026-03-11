@@ -1,5 +1,9 @@
 test example 6
 
+yum --disablerepo="*" --enablerepo="*-latest" update
+
+yum --disablerepo=* --enablerepo=*-latest update
+
 
 #!/bin/bash
 
