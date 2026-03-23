@@ -8,6 +8,7 @@ nazwa_uzytkownika ALL=(root) NOPASSWD: /usr/sbin/nginx -t
 
 sudo -l -U nazwa_uzytkownika
 
+0 10 * * * df -hP /var >> ~/dane; date >> ~/dane
 
 
 
