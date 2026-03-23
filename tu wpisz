@@ -2,3 +2,8 @@ test example 6
 
 #!/bin/bash
 echo -e "\e[1;36m🕒 Uptime:\e[0m \e[1;32m$(uptime -p | sed 's/up //')\e[0m"
+
+
+nazwa_uzytkownika ALL=(root) NOPASSWD: /usr/sbin/nginx -t
+
+sudo -l -U nazwa_uzytkownika
