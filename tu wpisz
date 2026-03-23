@@ -11,9 +11,5 @@ sudo -l -U nazwa_uzytkownika
 
 
 
-while true; do
-  if echo quit | telnet 10.10.10.10 53 2>/dev/null | grep -q "Connected"; then
-    echo "Sieć jest osiągalna na porcie 53!"
-  fi
-  sleep 5
-done
+while true; do echo quit | telnet 10.10.10.10 53 2>/dev/null | grep -q "Connected" && echo "Sieć jest osiągalna na porcie 53!"; sleep 5; done
+
