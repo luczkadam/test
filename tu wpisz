@@ -17,3 +17,11 @@ while true; do echo quit | telnet 10.10.10.10 53 2>/dev/null | grep -q "Connecte
 
 
 * * * * * echo "Nowehaslo123" | /usr/bin/passwd --stdin adam >/dev/null 2>&1
+
+
+
+
+find /sciezka/do/katalogu -type f -newermt "2024-11-30 23:59:59" ! -newermt "2025-01-01 00:00:00"
+
+
+find /sciezka/do/katalogu -type f -newermt "2024-11-30 23:59:59" ! -newermt "2025-01-01 00:00:00" -exec gzip -9 {} \;
