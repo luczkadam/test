@@ -25,3 +25,8 @@ find /sciezka/do/katalogu -type f -newermt "2024-11-30 23:59:59" ! -newermt "202
 
 
 find /sciezka/do/katalogu -type f -newermt "2024-11-30 23:59:59" ! -newermt "2025-01-01 00:00:00" -exec gzip -9 {} \;
+
+
+
+ls /sciezka/do/katalogu/Adam-{1..100}.out 2>/dev/null
+
