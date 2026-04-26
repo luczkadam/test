@@ -20,6 +20,7 @@ while true; do echo quit | telnet 10.10.10.10 53 2>/dev/null | grep -q "Connecte
 
 
 
+for usluga in docker containerd; do echo "${usluga^} uptime=$(systemctl status $usluga | awk -F'; ' '/Active:/ {print $2}' | sed -E 's/ ago| temu//')"; done
 
 find /sciezka/do/katalogu -type f -newermt "2024-11-30 23:59:59" ! -newermt "2025-01-01 00:00:00"
 
