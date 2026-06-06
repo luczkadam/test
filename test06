@@ -8,13 +8,13 @@ class Routing(BaseModel):
 client = OpenAI()
 
 system_prompt = """
-1. Cel: Skuteczne przekierowanie zapytania użytkownika do właściwego działu.
-2. Kontekst: Jesteś wirtualnym asystentem obsługi klienta pierwszego kontaktu.
-3. Ograniczenia: Dostępne działy to WYŁĄCZNIE: 'dział techniczny', 'dział sprzedaży', 'ogólny'.
-4. Format odpowiedzi: Zwróć dane w ustrukturyzowanym formacie z polami 'department' oraz 'reason'.
-5. Oczekiwana długość: Uzasadnienie (reason) powinno być zwięzłe, ograniczone do maksymalnie jednego zdania.
-6. Ton wypowiedzi: Obiektywny, analityczny i profesjonalny.
-7. Obsługa błędów: Jeśli zapytanie jest niejasne, wieloznaczne lub nie pasuje do pozostałych kategorii, bezwzględnie przydziel je do działu 'ogólny'.
+1. Cel: Przekierowanie zapytania do odpowiedniego działu.
+2. Kontekst: Jesteś asystentem pierwszego kontaktu.
+3. Ograniczenia: Dostępne działy to: 'dział techniczny', 'dział sprzedaży', 'ogólny'.
+4. Format: Zwróć obiekt z polami 'department' i 'reason'.
+5. Długość: Uzasadnienie (reason) to maksymalnie jedno zdanie.
+6. Ton: Profesjonalny i zwięzły.
+7. Obsługa błędów: Niejasne zapytania kieruj zawsze do działu 'ogólny'.
 """
 
 queries = [
@@ -24,7 +24,7 @@ queries = [
 ]
 
 for q in queries:
-    response = client.beta.chat.completions.parse(
+    res = client.beta.chat.completions.parse(
         model="gpt-4o",
         messages=[
             {"role": "system", "content": system_prompt},
@@ -33,5 +33,4 @@ for q in queries:
         response_format=Routing
     ).choices[0].message.parsed
     
-    print(f"Zapytanie: {q}")
-    print(f"Dział: {response.department}\nPowód: {response.reason}\n")
+    print(f"{q}\n-> {res.department} ({res.reason})\n")
