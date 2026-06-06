@@ -1,28 +1,19 @@
-import json
-import re
+def mock_llm(prompt: str) -> str:
+    if "Analiza" in prompt:
+        return "Imię: Jan\nZainteresowania: Podróże, Fotografia\nOstatni zakup: Aparat Sony A7 III"
+    elif "Szkic" in prompt:
+        return "Cześć Jan! Widzieliśmy, że kupiłeś Aparat Sony A7 III. Ponieważ lubisz fotografię i podróże, mamy dla Ciebie super ofertę na obiektywy!"
+    elif "Gotowy" in prompt:
+        return "Szanowny Panie Janie,\n\nMamy nadzieję, że nowy Aparat Sony A7 III sprawdza się w podróżach. Przygotowaliśmy dla Pana specjalną ofertę na akcesoria fotograficzne.\n\nPozdrawiamy serdecznie,\nZespół Obsługi Klienta"
+    return ""
 
-def parse_job_title_local(title: str) -> dict:
-    role_match = re.search(r'\] (.*?) \(', title)
-    role = role_match.group(1) if role_match else None
-    
-    skills = ["Power BI"] if "Power BI" in title else []
-    languages = ["English"] if "English" in title else []
-    
-    result = {
-        "original_title": title,
-        "Job Role": role,
-        "Seniority Level": None,
-        "Contract Type": None,
-        "Location / Work Mode": None,
-        "Specialization": "Reporting and Finance" if "Finance" in title else None,
-        "Industry": None,
-        "Technical Skills": skills,
-        "Language Requirement": languages
-    }
-    
-    return result
+user_data = "{imie: 'Jan', zainteresowania: ['Podróże', 'Fotografia'], ostatni_zakup: 'Aparat Sony A7 III'}"
 
-title = "[CTG] Reporting and Finance Business Partner (Fluent English, Power BI)"
-parsed_data = parse_job_title_local(title)
+step1 = mock_llm(f"KROK 1. Analiza profilu: {user_data}")
+print(f"--- KROK 1: Analiza ---\n{step1}\n")
 
-print(json.dumps(parsed_data, indent=2))
+step2 = mock_llm(f"KROK 2. Szkic wiadomości do klienta: {step1}")
+print(f"--- KROK 2: Szkic ---\n{step2}\n")
+
+step3 = mock_llm(f"KROK 3. Gotowy, sformatowany e-mail: {step2}")
+print(f"--- KROK 3: Gotowy e-mail ---\n{step3}")
