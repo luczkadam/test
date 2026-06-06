@@ -1,20 +1,12 @@
-from pydantic import BaseModel
+import json
 from openai import OpenAI
-
-class Routing(BaseModel):
-    department: str
-    reason: str
 
 client = OpenAI()
 
 system_prompt = """
-1. Cel: Przekierowanie zapytania do odpowiedniego działu.
-2. Kontekst: Jesteś asystentem pierwszego kontaktu.
-3. Ograniczenia: Dostępne działy to: 'dział techniczny', 'dział sprzedaży', 'ogólny'.
-4. Format: Zwróć obiekt z polami 'department' i 'reason'.
-5. Długość: Uzasadnienie (reason) to maksymalnie jedno zdanie.
-6. Ton: Profesjonalny i zwięzły.
-7. Obsługa błędów: Niejasne zapytania kieruj zawsze do działu 'ogólny'.
+Zwróć WYŁĄCZNIE poprawny obiekt JSON z kluczami "department" i "reason".
+Dostępne działy: 'dział techniczny', 'dział sprzedaży', 'ogólny'.
+Niejasne zapytania kieruj do 'ogólny'. Uzasadnienie (reason) to max 1 zdanie.
 """
 
 queries = [
@@ -24,13 +16,14 @@ queries = [
 ]
 
 for q in queries:
-    res = client.beta.chat.completions.parse(
-        model="gpt-4o",
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        response_format={"type": "json_object"},
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": q}
-        ],
-        response_format=Routing
-    ).choices[0].message.parsed
+        ]
+    )
     
-    print(f"{q}\n-> {res.department} ({res.reason})\n")
+    result = json.loads(response.choices[0].message.content)
+    print(f"{q}\n-> {result['department']} ({result['reason']})\n")
