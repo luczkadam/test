@@ -1,13 +1,45 @@
-import json
-from jinja2 import Environment
+from pydantic import BaseModel
 
-env = Environment()
-env.filters["as_json"] = lambda v: json.dumps(v, indent=2, ensure_ascii=False)
+class DayPlan(BaseModel):
+    title: str
+    activities: list[str]
 
-user_profile = {"user_id": "u-12345", "last_order": "Margherita", "payment": "karta"}
+class TravelPlanResponse(BaseModel):
+    chain_of_thought: str
+    days: list[DayPlan]
+    logistics: list[str]
 
-template = env.from_string("""Jesteś asystentem pizzerii. Zbierz: rodzaj pizzy, rozmiar, adres, telefon, płatność.
-Profil klienta:
-{{ user_profile | as_json }}""")
+system_prompt = """
+Jesteś asystentem planowania podróży.
+1. Przeanalizuj podane notatki używając techniki Chain of Thought (myśl krok po kroku).
+2. Na ich podstawie stwórz przejrzysty i uporządkowany plan podróży.
+3. Wygeneruj logiczny plan dnia oraz sekcję logistyczną (budżet, transport, noclegi).
+"""
 
-print(template.render(user_profile=user_profile))
+notes = """Zakopane: Dolina Chochołowska. Trekking.
+Kraków: Wawel, Stare Miasto, smocza jama.
+terminy: 3 dni na góry, 2 dni na miasto
+Budżet 3000 zł na cały wyjazd. Noclegi do znalezienia blisko centrum.
+Obiady lokalne - knajpy w centrum..
+Zakupy? Czas na kupienie pamiątek.
+Co z transportem? Sprawdzić bilety na pociąg/autobus."""
+
+messages = [
+    {"role": "system", "content": system_prompt},
+    {"role": "user", "content": notes}
+]
+
+response = call_api(
+    messages=messages,
+    response_model=TravelPlanResponse
+)
+
+print(response.chain_of_thought, "\n")
+for day in response.days:
+    print(day.title)
+    for act in day.activities:
+        print(f"- {act}")
+    print()
+print("Logistyka:")
+for log in response.logistics:
+    print(f"- {log}")
