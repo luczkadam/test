@@ -1,45 +1,27 @@
 from pydantic import BaseModel
 
-class DayPlan(BaseModel):
+class Day(BaseModel):
     title: str
-    activities: list[str]
+    tasks: list[str]
 
-class TravelPlanResponse(BaseModel):
-    chain_of_thought: str
-    days: list[DayPlan]
-    logistics: list[str]
+class Plan(BaseModel):
+    cot: str
+    days: list[Day]
 
-system_prompt = """
-Jesteś asystentem planowania podróży.
-1. Przeanalizuj podane notatki używając techniki Chain of Thought (myśl krok po kroku).
-2. Na ich podstawie stwórz przejrzysty i uporządkowany plan podróży.
-3. Wygeneruj logiczny plan dnia oraz sekcję logistyczną (budżet, transport, noclegi).
-"""
-
-notes = """Zakopane: Dolina Chochołowska. Trekking.
-Kraków: Wawel, Stare Miasto, smocza jama.
-terminy: 3 dni na góry, 2 dni na miasto
-Budżet 3000 zł na cały wyjazd. Noclegi do znalezienia blisko centrum.
-Obiady lokalne - knajpy w centrum..
-Zakupy? Czas na kupienie pamiątek.
-Co z transportem? Sprawdzić bilety na pociąg/autobus."""
+system_prompt = "Jesteś organizatorem podróży. Przeanalizuj notatki używając Chain of Thought (pole 'cot'), a następnie wygeneruj uporządkowany plan w podziale na dni."
 
 messages = [
     {"role": "system", "content": system_prompt},
-    {"role": "user", "content": notes}
+    {"role": "user", "content": "Zakopane: Dolina Chochołowska. Kraków: Wawel, Stare Miasto. 3 dni góry, 2 dni miasto. Budżet 3000 zł. Obiady w centrum, pamiątki, sprawdzić bilety."}
 ]
 
 response = call_api(
     messages=messages,
-    response_model=TravelPlanResponse
+    response_model=Plan
 )
 
-print(response.chain_of_thought, "\n")
-for day in response.days:
-    print(day.title)
-    for act in day.activities:
-        print(f"- {act}")
-    print()
-print("Logistyka:")
-for log in response.logistics:
-    print(f"- {log}")
+print(f"--- ANALIZA CoT ---\n{response.cot}\n")
+for d in response.days:
+    print(d.title)
+    for t in d.tasks:
+        print(f"- {t}")
