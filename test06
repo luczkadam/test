@@ -1,28 +1,97 @@
-import json
+def call_api(messages):
+    return """<attribute_list>
+1. Country
+   Description: The country where the job is located. Handles codes and full names.
+   Possible values: [United States, UK, Poland, Germany, null]
+   Examples: "US", "United States", "Poland"
 
-tools = [
-    {
-        "name": "analyze_sentiment",
-        "description": "Analizuje wydźwięk podanego tekstu (pozytywny, negatywny, neutralny)."
-    },
-    {
-        "name": "get_geolocation",
-        "description": "Pobiera współrzędne geograficzne na podstawie nazwy miasta."
-    }
+2. City
+   Description: The specific city or cities mentioned in the string.
+   Possible values: [London, New York, San Francisco, null]
+   Examples: "London", "SF", "NYC"
+
+3. Work Mode
+   Description: Indicates if the role is remote, hybrid, or on-site.
+   Possible values: [Remote, Hybrid, On-site, null]
+   Examples: "Remote", "Hybrid", "On-site"
+
+4. Region
+   Description: Broader geographical area if specific country/city is missing.
+   Possible values: [EMEA, LatAm, APAC, null]
+   Examples: "EMEA", "LatAm"
+
+5. State/Province
+   Description: Regional state or province, especially for US locations.
+   Possible values: [CA, NY, TX, null]
+   Examples: "CA", "NY"
+
+6. Multi-Location Flag
+   Description: Indicates if the job allows choosing between multiple specific places.
+   Possible values: [True, False]
+   Examples: "SF, NYC or Remote", "London"
+
+7. Country Code
+   Description: Extracted ISO country code if provided instead of full name.
+   Possible values: [US, UK, PL, null]
+   Examples: "US", "UK"
+</attribute_list>"""
+
+def analyze_locations(raw_locations):
+    system_prompt = """
+You are a location data expert tasked with discovering structured attributes that can be consistently extracted from raw job posting location strings.
+
+## Your Task:
+Analyze the provided location strings and identify the 7 most important attributes that can be reliably extracted across formats.
+
+## Include attributes that are:
+- Common across many location strings
+- Useful for filtering, grouping, or mapping job offers
+- Consistent - extractable even from partial/messy data
+
+## Exclude attributes that are:
+- Too rare (appear in only a few strings)
+- Redundant with other attributes
+- Not actionable for job market analysis
+
+## Edge cases to handle:
+- Remote / hybrid / on-site indicators
+- Multi-city strings ("London, New York or Remote")
+- Country codes vs full names ("US" vs "United States")
+- Regions without specific places ("EMEA", "LatAm")
+- Ambiguous strings ("Remote" with no country context)
+
+## For each attribute provide:
+- Clear, concise name
+- Brief description
+- Possible values (realistic, not exhaustive)
+- 3 real examples copied verbatim from the provided data
+
+## Output Format:
+<attribute_list>
+1. [Attribute Name]
+   Description: ...
+   Possible values: [value1, value2, ...]
+   Examples: "...", "...", "..."
+
+2. [Attribute Name]
+   ...
+</attribute_list>
+"""
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": str(raw_locations)}
+    ]
+    
+    print(call_api(messages))
+
+raw_data = [
+    "Remote",
+    "London, New York or Remote",
+    "SF, CA",
+    "United States (Hybrid)",
+    "EMEA",
+    "Warsaw, Poland (On-site)"
 ]
 
-def get_geolocation(city: str) -> dict:
-    db = {
-        "Warszawa": {"lat": 52.2297, "lon": 21.0122},
-        "Kraków": {"lat": 50.0647, "lon": 19.9450}
-    }
-    return db.get(city, {"error": "Brak danych"})
-
-def mock_agent(query: str) -> str:
-    if "Kraków" in query:
-        called_tool = tools[1]["name"]
-        tool_result = get_geolocation("Kraków")
-        return f"Wywołano narzędzie: {called_tool}\nZwrócone dane: {json.dumps(tool_result, indent=2)}"
-    return "Nie użyto żadnego narzędzia."
-
-print(mock_agent("Jakie są współrzędne dla miasta Kraków?"))
+analyze_locations(raw_data)
