@@ -1,3 +1,14 @@
+from openai import OpenAI
+
+client = OpenAI()
+
+def call_api(messages):
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=messages
+    )
+    return response.choices[0].message.content
+
 old_messages = [
     {"role": "system", "content": "Jesteś asystentem prawnym, który doradza w sprawie umów wynajmu mieszkań w Polsce."},
     {"role": "user", "content": "Chciałbym renegocjować umowę najmu, bo czynsz wzrósł o 20%. Jak mogę to zrobić?"},
