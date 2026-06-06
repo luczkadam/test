@@ -1,18 +1,37 @@
+from pydantic import BaseModel
 from openai import OpenAI
+
+class Routing(BaseModel):
+    department: str
+    reason: str
 
 client = OpenAI()
 
-cv_data = "Doświadczenie: 3 lata Python, podstawy SQL i Dockera."
-job_offer = "Wymagania: Python Developer, relacyjne bazy danych, konteneryzacja (Docker)."
+system_prompt = """
+1. Cel: Skuteczne przekierowanie zapytania użytkownika do właściwego działu.
+2. Kontekst: Jesteś wirtualnym asystentem obsługi klienta pierwszego kontaktu.
+3. Ograniczenia: Dostępne działy to WYŁĄCZNIE: 'dział techniczny', 'dział sprzedaży', 'ogólny'.
+4. Format odpowiedzi: Zwróć dane w ustrukturyzowanym formacie z polami 'department' oraz 'reason'.
+5. Oczekiwana długość: Uzasadnienie (reason) powinno być zwięzłe, ograniczone do maksymalnie jednego zdania.
+6. Ton wypowiedzi: Obiektywny, analityczny i profesjonalny.
+7. Obsługa błędów: Jeśli zapytanie jest niejasne, wieloznaczne lub nie pasuje do pozostałych kategorii, bezwzględnie przydziel je do działu 'ogólny'.
+"""
 
-system_prompt = """Jesteś ekspertem optymalizacji CV. NIE WYMYŚLAJ DOŚWIADCZENIA.
-Kroki: 1. Wypisz wymagania z ogłoszenia. 2. Oznacz w stosunku do CV: ✅/⚠️/❌. 3. Przeformułuj CV pod ATS.
-Format wyjścia: ### Dopasowanie | ### Zoptymalizowane CV | ### Co zmieniono | ### Sugestie"""
-
-messages = [
-    {"role": "system", "content": system_prompt},
-    {"role": "user", "content": f"Zoptymalizuj CV pod tę ofertę.\nCV:\n{cv_data}\n\nOFERTA:\n{job_offer}"}
+queries = [
+    "Aplikacja wyrzuca błąd 500 przy logowaniu.",
+    "Chciałbym kupić licencję Enterprise dla 50 osób.",
+    "W jakich godzinach pracujecie?"
 ]
 
-response = client.chat.completions.create(model="gpt-4o", messages=messages)
-print(response.choices[0].message.content)
+for q in queries:
+    response = client.beta.chat.completions.parse(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": q}
+        ],
+        response_format=Routing
+    ).choices[0].message.parsed
+    
+    print(f"Zapytanie: {q}")
+    print(f"Dział: {response.department}\nPowód: {response.reason}\n")
