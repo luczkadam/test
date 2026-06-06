@@ -1,0 +1,13 @@
+old_messages = [
+    {"role": "system", "content": "Jesteś asystentem prawnym, który doradza w sprawie umów wynajmu mieszkań w Polsce."},
+    {"role": "user", "content": "Chciałbym renegocjować umowę najmu, bo czynsz wzrósł o 20%. Jak mogę to zrobić?"},
+    {"role": "assistant", "content": "Możesz rozpocząć od wysłania formalnego pisma do właściciela z prośbą o renegocjację. Warto uzasadnić swoją prośbę, np. opisując aktualną sytuację rynkową lub swoje możliwości finansowe."},
+    {"role": "user", "content": "A co, jeśli właściciel się nie zgodzi?"},
+    {"role": "assistant", "content": "Jeśli właściciel się nie zgodzi, możesz rozważyć mediację lub negocjacje przez prawnika. Alternatywnie możesz sprawdzić, czy umowa zawiera klauzulę dotyczącą podwyżek czynszu i czy była przestrzegana."}
+]
+
+new_message = {"role": "user", "content": "Co napisać w tym piśmie?"}
+messages = old_messages + [new_message]
+
+mail = call_api(messages)
+print(mail)
