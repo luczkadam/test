@@ -1,13 +1,11 @@
 import json
-from openai import OpenAI
 
-client = OpenAI()
-
-system_prompt = """
-Zwróć WYŁĄCZNIE poprawny obiekt JSON z kluczami "department" i "reason".
-Dostępne działy: 'dział techniczny', 'dział sprzedaży', 'ogólny'.
-Niejasne zapytania kieruj do 'ogólny'. Uzasadnienie (reason) to max 1 zdanie.
-"""
+def mock_ai_response(query):
+    if "błąd" in query.lower():
+        return '{"department": "dział techniczny", "reason": "Zgłoszenie błędu aplikacji."}'
+    elif "kupić" in query.lower():
+        return '{"department": "dział sprzedaży", "reason": "Zainteresowanie zakupem."}'
+    return '{"department": "ogólny", "reason": "Pytanie ogólne."}'
 
 queries = [
     "Aplikacja wyrzuca błąd 500 przy logowaniu.",
@@ -16,14 +14,6 @@ queries = [
 ]
 
 for q in queries:
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        response_format={"type": "json_object"},
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": q}
-        ]
-    )
-    
-    result = json.loads(response.choices[0].message.content)
+    response_text = mock_ai_response(q)
+    result = json.loads(response_text)
     print(f"{q}\n-> {result['department']} ({result['reason']})\n")
