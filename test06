@@ -1,30 +1,13 @@
-from jinja2 import Template
+import json
+from jinja2 import Environment
 
-template_string = """
-{% if available_tools %}
-## Available Tools:
-<tools>
-{% for tool in available_tools %}
-{{ loop.index }}. {{ tool.name }}: {{ tool.description }}
-{% endfor %}
-</tools>
-{% else %}
-No tools available for this task.
-{% endif %}
-"""
+env = Environment()
+env.filters["as_json"] = lambda v: json.dumps(v, indent=2, ensure_ascii=False)
 
-template = Template(template_string)
+user_profile = {"user_id": "u-12345", "last_order": "Margherita", "payment": "karta"}
 
-tools = [
-    {"name": "search_web", "description": "Searches the web for up-to-date information."},
-    {"name": "run_python_code", "description": "Executes a given snippet of Python code."},
-    {"name": "check_calendar", "description": "Checks for available slots in the user's calendar."}
-]
+template = env.from_string("""Jesteś asystentem pizzerii. Zbierz: rodzaj pizzy, rozmiar, adres, telefon, płatność.
+Profil klienta:
+{{ user_profile | as_json }}""")
 
-with_tools = template.render(available_tools=tools)
-print("--- WITH TOOLS ---")
-print(with_tools)
-
-without_tools = template.render(available_tools=[])
-print("\n--- WITHOUT TOOLS ---")
-print(without_tools)
+print(template.render(user_profile=user_profile))
