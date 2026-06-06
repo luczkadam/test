@@ -1,4 +1,10 @@
+import os
 from pydantic import BaseModel
+from openai import OpenAI
+
+os.environ["OPENAI_API_KEY"] = "TUTAJ_WKLEJ_SWOJ_KLUCZ_API"
+
+client = OpenAI()
 
 class Day(BaseModel):
     title: str
@@ -8,6 +14,14 @@ class Plan(BaseModel):
     cot: str
     days: list[Day]
 
+def call_api(messages, response_model):
+    completion = client.beta.chat.completions.parse(
+        model="gpt-4o",
+        messages=messages,
+        response_format=response_model
+    )
+    return completion.choices[0].message.parsed
+
 system_prompt = "Jesteś organizatorem podróży. Przeanalizuj notatki używając Chain of Thought (pole 'cot'), a następnie wygeneruj uporządkowany plan w podziale na dni."
 
 messages = [
@@ -15,10 +29,7 @@ messages = [
     {"role": "user", "content": "Zakopane: Dolina Chochołowska. Kraków: Wawel, Stare Miasto. 3 dni góry, 2 dni miasto. Budżet 3000 zł. Obiady w centrum, pamiątki, sprawdzić bilety."}
 ]
 
-response = call_api(
-    messages=messages,
-    response_model=Plan
-)
+response = call_api(messages, Plan)
 
 print(f"--- ANALIZA CoT ---\n{response.cot}\n")
 for d in response.days:
