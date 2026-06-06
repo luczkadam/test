@@ -1,24 +1,30 @@
-from openai import OpenAI
+from jinja2 import Template
 
-client = OpenAI()
+template_string = """
+{% if available_tools %}
+## Available Tools:
+<tools>
+{% for tool in available_tools %}
+{{ loop.index }}. {{ tool.name }}: {{ tool.description }}
+{% endfor %}
+</tools>
+{% else %}
+No tools available for this task.
+{% endif %}
+"""
 
-def call_api(messages):
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=messages
-    )
-    return response.choices[0].message.content
+template = Template(template_string)
 
-old_messages = [
-    {"role": "system", "content": "Jesteś asystentem prawnym, który doradza w sprawie umów wynajmu mieszkań w Polsce."},
-    {"role": "user", "content": "Chciałbym renegocjować umowę najmu, bo czynsz wzrósł o 20%. Jak mogę to zrobić?"},
-    {"role": "assistant", "content": "Możesz rozpocząć od wysłania formalnego pisma do właściciela z prośbą o renegocjację. Warto uzasadnić swoją prośbę, np. opisując aktualną sytuację rynkową lub swoje możliwości finansowe."},
-    {"role": "user", "content": "A co, jeśli właściciel się nie zgodzi?"},
-    {"role": "assistant", "content": "Jeśli właściciel się nie zgodzi, możesz rozważyć mediację lub negocjacje przez prawnika. Alternatywnie możesz sprawdzić, czy umowa zawiera klauzulę dotyczącą podwyżek czynszu i czy była przestrzegana."}
+tools = [
+    {"name": "search_web", "description": "Searches the web for up-to-date information."},
+    {"name": "run_python_code", "description": "Executes a given snippet of Python code."},
+    {"name": "check_calendar", "description": "Checks for available slots in the user's calendar."}
 ]
 
-new_message = {"role": "user", "content": "Co napisać w tym piśmie?"}
-messages = old_messages + [new_message]
+with_tools = template.render(available_tools=tools)
+print("--- WITH TOOLS ---")
+print(with_tools)
 
-mail = call_api(messages)
-print(mail)
+without_tools = template.render(available_tools=[])
+print("\n--- WITHOUT TOOLS ---")
+print(without_tools)
