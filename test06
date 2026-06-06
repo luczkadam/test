@@ -1,18 +1,23 @@
-import os
+from enum import Enum
 from pydantic import BaseModel
 from openai import OpenAI
 
-os.environ["OPENAI_API_KEY"] = "TUTAJ_WKLEJ_SWOJ_KLUCZ_API"
-
 client = OpenAI()
 
-class Day(BaseModel):
-    title: str
-    tasks: list[str]
+class SpeakerRole(str, Enum):
+    agent = "AI Agent"
+    client = "Klient"
 
-class Plan(BaseModel):
-    cot: str
-    days: list[Day]
+class DialogueTurn(BaseModel):
+    speaker: SpeakerRole
+    content: str
+
+class Scenario(BaseModel):
+    title: str
+    dialogue: list[DialogueTurn]
+
+class DialogueGenerationResponse(BaseModel):
+    scenarios: list[Scenario]
 
 def call_api(messages, response_model):
     completion = client.beta.chat.completions.parse(
@@ -22,17 +27,18 @@ def call_api(messages, response_model):
     )
     return completion.choices[0].message.parsed
 
-system_prompt = "Jesteś organizatorem podróży. Przeanalizuj notatki używając Chain of Thought (pole 'cot'), a następnie wygeneruj uporządkowany plan w podziale na dni."
+system_prompt = """
+Jesteś ekspertem w tworzeniu scenariuszy dialogów.
+1. Zbuduj 3 różne scenariusze rezerwacji stolika w restauracji.
+2. Każdy dialog musi być rozbudowany i składać się z 5-7 tur.
+3. Przewidź różne sytuacje (np. udana rezerwacja, brak miejsc na wybraną godzinę, problem z odnalezieniem rezerwacji).
+"""
 
-messages = [
-    {"role": "system", "content": system_prompt},
-    {"role": "user", "content": "Zakopane: Dolina Chochołowska. Kraków: Wawel, Stare Miasto. 3 dni góry, 2 dni miasto. Budżet 3000 zł. Obiady w centrum, pamiątki, sprawdzić bilety."}
-]
+messages = [{"role": "system", "content": system_prompt}]
 
-response = call_api(messages, Plan)
+response = call_api(messages, DialogueGenerationResponse)
 
-print(f"--- ANALIZA CoT ---\n{response.cot}\n")
-for d in response.days:
-    print(d.title)
-    for t in d.tasks:
-        print(f"- {t}")
+for scenario in response.scenarios:
+    print(f"\n--- {scenario.title.upper()} ---")
+    for turn in scenario.dialogue:
+        print(f"[{turn.speaker.value}] - {turn.content}")
