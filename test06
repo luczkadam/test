@@ -1,19 +1,54 @@
 import json
+from openai import OpenAI
 
-def mock_ai_response(query):
-    if "błąd" in query.lower():
-        return '{"department": "dział techniczny", "reason": "Zgłoszenie błędu aplikacji."}'
-    elif "kupić" in query.lower():
-        return '{"department": "dział sprzedaży", "reason": "Zainteresowanie zakupem."}'
-    return '{"department": "ogólny", "reason": "Pytanie ogólne."}'
+client = OpenAI()
 
-queries = [
-    "Aplikacja wyrzuca błąd 500 przy logowaniu.",
-    "Chciałbym kupić licencję Enterprise dla 50 osób.",
-    "W jakich godzinach pracujecie?"
-]
+def parse_job_title(job_title: str, attribute_list: str) -> dict:
+    system_prompt = f"""You are an expert at parsing job titles and extracting structured information.
 
-for q in queries:
-    response_text = mock_ai_response(q)
-    result = json.loads(response_text)
-    print(f"{q}\n-> {result['department']} ({result['reason']})\n")
+## Attributes to Extract:
+{attribute_list}
+
+## Rules:
+1. Extract ONLY information explicitly stated in the job title.
+2. Never infer or assume - if not stated -> null.
+3. For list-type attributes (e.g. skills, tools) -> return a JSON array.
+4. Copy values exactly as they appear in the title (no paraphrasing).
+5. Return ONLY valid JSON - no markdown fences, no explanations.
+
+## Output Format:
+{{
+  "original_title": "<exact job title as provided>",
+  "<attribute_name>": "<extracted value or null>",
+  "<attribute_name>": ["<value1>", "<value2>"]
+}}
+"""
+    
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": job_title}
+    ]
+    
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        response_format={"type": "json_object"},
+        messages=messages
+    )
+    
+    return json.loads(response.choices[0].message.content)
+
+# Przykładowe użycie:
+attr_list = """
+- Job Role
+- Seniority Level
+- Contract Type
+- Location / Work Mode
+- Specialization
+- Industry
+- Technical Skills
+- Language Requirement
+"""
+
+title = "[CTG] Reporting and Finance Business Partner (Fluent English, Power BI)"
+# result = parse_job_title(title, attr_list)
+# print(json.dumps(result, indent=2))
