@@ -1,19 +1,28 @@
-def mock_llm(prompt: str) -> str:
-    if "Analiza" in prompt:
-        return "Imię: Jan\nZainteresowania: Podróże, Fotografia\nOstatni zakup: Aparat Sony A7 III"
-    elif "Szkic" in prompt:
-        return "Cześć Jan! Widzieliśmy, że kupiłeś Aparat Sony A7 III. Ponieważ lubisz fotografię i podróże, mamy dla Ciebie super ofertę na obiektywy!"
-    elif "Gotowy" in prompt:
-        return "Szanowny Panie Janie,\n\nMamy nadzieję, że nowy Aparat Sony A7 III sprawdza się w podróżach. Przygotowaliśmy dla Pana specjalną ofertę na akcesoria fotograficzne.\n\nPozdrawiamy serdecznie,\nZespół Obsługi Klienta"
-    return ""
+import json
 
-user_data = "{imie: 'Jan', zainteresowania: ['Podróże', 'Fotografia'], ostatni_zakup: 'Aparat Sony A7 III'}"
+tools = [
+    {
+        "name": "analyze_sentiment",
+        "description": "Analizuje wydźwięk podanego tekstu (pozytywny, negatywny, neutralny)."
+    },
+    {
+        "name": "get_geolocation",
+        "description": "Pobiera współrzędne geograficzne na podstawie nazwy miasta."
+    }
+]
 
-step1 = mock_llm(f"KROK 1. Analiza profilu: {user_data}")
-print(f"--- KROK 1: Analiza ---\n{step1}\n")
+def get_geolocation(city: str) -> dict:
+    db = {
+        "Warszawa": {"lat": 52.2297, "lon": 21.0122},
+        "Kraków": {"lat": 50.0647, "lon": 19.9450}
+    }
+    return db.get(city, {"error": "Brak danych"})
 
-step2 = mock_llm(f"KROK 2. Szkic wiadomości do klienta: {step1}")
-print(f"--- KROK 2: Szkic ---\n{step2}\n")
+def mock_agent(query: str) -> str:
+    if "Kraków" in query:
+        called_tool = tools[1]["name"]
+        tool_result = get_geolocation("Kraków")
+        return f"Wywołano narzędzie: {called_tool}\nZwrócone dane: {json.dumps(tool_result, indent=2)}"
+    return "Nie użyto żadnego narzędzia."
 
-step3 = mock_llm(f"KROK 3. Gotowy, sformatowany e-mail: {step2}")
-print(f"--- KROK 3: Gotowy e-mail ---\n{step3}")
+print(mock_agent("Jakie są współrzędne dla miasta Kraków?"))
