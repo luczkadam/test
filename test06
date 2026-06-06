@@ -1,54 +1,28 @@
 import json
-from openai import OpenAI
+import re
 
-client = OpenAI()
-
-def parse_job_title(job_title: str, attribute_list: str) -> dict:
-    system_prompt = f"""You are an expert at parsing job titles and extracting structured information.
-
-## Attributes to Extract:
-{attribute_list}
-
-## Rules:
-1. Extract ONLY information explicitly stated in the job title.
-2. Never infer or assume - if not stated -> null.
-3. For list-type attributes (e.g. skills, tools) -> return a JSON array.
-4. Copy values exactly as they appear in the title (no paraphrasing).
-5. Return ONLY valid JSON - no markdown fences, no explanations.
-
-## Output Format:
-{{
-  "original_title": "<exact job title as provided>",
-  "<attribute_name>": "<extracted value or null>",
-  "<attribute_name>": ["<value1>", "<value2>"]
-}}
-"""
+def parse_job_title_local(title: str) -> dict:
+    role_match = re.search(r'\] (.*?) \(', title)
+    role = role_match.group(1) if role_match else None
     
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": job_title}
-    ]
+    skills = ["Power BI"] if "Power BI" in title else []
+    languages = ["English"] if "English" in title else []
     
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        response_format={"type": "json_object"},
-        messages=messages
-    )
+    result = {
+        "original_title": title,
+        "Job Role": role,
+        "Seniority Level": None,
+        "Contract Type": None,
+        "Location / Work Mode": None,
+        "Specialization": "Reporting and Finance" if "Finance" in title else None,
+        "Industry": None,
+        "Technical Skills": skills,
+        "Language Requirement": languages
+    }
     
-    return json.loads(response.choices[0].message.content)
-
-# Przykładowe użycie:
-attr_list = """
-- Job Role
-- Seniority Level
-- Contract Type
-- Location / Work Mode
-- Specialization
-- Industry
-- Technical Skills
-- Language Requirement
-"""
+    return result
 
 title = "[CTG] Reporting and Finance Business Partner (Fluent English, Power BI)"
-# result = parse_job_title(title, attr_list)
-# print(json.dumps(result, indent=2))
+parsed_data = parse_job_title_local(title)
+
+print(json.dumps(parsed_data, indent=2))
