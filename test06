@@ -1,48 +1,31 @@
 from pydantic import BaseModel, Field
-from typing import List
 
-# 1. Struktura dla pojedynczej propozycji z uzasadnieniem (Reasoner)
-class Reasoner(BaseModel):
-    proposition: str = Field(description="Główne stwierdzenie lub propozycja")
-    explainer: List[str] = Field(description="Lista argumentów lub uzasadnień dla propozycji")
+# 1. Definicja struktury adresowej
+class Address(BaseModel):
+    street: str = Field(description="Nazwa ulicy")
+    building_number: str = Field(description="Numer budynku/domu")
+    city: str = Field(description="Miasto")
+    zip_code: str = Field(description="Kod pocztowy")
 
-# 2. Główna struktura zadania
-class TaskResponse(BaseModel):
-    propositions: List[Reasoner]
-
-# 3. Symulacja odpowiedzi z modelu (zgodnie z formatem na screenach)
+# 2. Symulacja odpowiedzi z modelu (zgodnie z formatem na screenach)
 mocked_llm_output = '''
 {
-  "propositions": [
-    {
-      "proposition": "Wprowadzenie automatycznej weryfikacji maili",
-      "explainer": [
-        "Skraca czas obsługi zgłoszeń przez pracowników o 30%.",
-        "Eliminuje błędy ludzkie przy ręcznej klasyfikacji.",
-        "Pozwala na natychmiastowe blokowanie znanych domen spamowych."
-      ]
-    },
-    {
-      "proposition": "Integracja z systemem CRM",
-      "explainer": [
-        "Umożliwia pełny wgląd w historię kontaktów z klientem.",
-        "Automatycznie aktualizuje dane w bazie po każdej interakcji."
-      ]
-    }
-  ]
+  "street": "Marszałkowska",
+  "building_number": "10/12",
+  "city": "Warszawa",
+  "zip_code": "00-001"
 }
 '''
 
-# 4. Parsowanie i walidacja
+# 3. Parsowanie i walidacja
 try:
-    data = TaskResponse.model_validate_json(mocked_llm_output)
+    address = Address.model_validate_json(mocked_llm_output)
 except AttributeError:
-    data = TaskResponse.parse_raw(mocked_llm_output)
+    address = Address.parse_raw(mocked_llm_output)
 
-# 5. Wyświetlenie wyników
-for item in data.propositions:
-    print(f"Propozycja: {item.proposition}")
-    print("Uzasadnienie:")
-    for point in item.explainer:
-        print(f" - {point}")
-    print("-" * 30)
+# 4. Wyświetlenie zwalidowanych danych
+print("--- WYEKSTRAHOWANY ADRES ---")
+print(f"Ulica: {address.street}")
+print(f"Numer: {address.building_number}")
+print(f"Miasto: {address.city}")
+print(f"Kod:   {address.zip_code}")
