@@ -2,65 +2,67 @@ import json
 from pydantic import BaseModel
 from typing import List
 
-# 1. Definicja schematu za pomocą Pydantic
+# 1. Definicja schematu
 class Dish(BaseModel):
     dish: str
     ingredients: List[str]
     steps: List[str]
 
-# 2. Funkcja mockująca (zastępuje wywołanie klienta OpenAI)
+# 2. Funkcja mockująca (zastępuje wywołanie API)
 def call_api(messages: list, functions: list) -> str:
-    # Symulujemy argumenty zwrócone przez wywołanie funkcji LLM
-    # Dane są dostosowane do modelu Pydantic (dish, ingredients, steps)
     return '''
     {
       "dish": "Spaghetti Carbonara",
       "ingredients": [
         "200g makaronu spaghetti",
-        "100g guanciale (lub dobrej jakości boczku)",
+        "100g guanciale (lub boczku)",
         "2 duże jajka",
-        "50g tartego sera Pecorino Romano",
+        "50g sera Pecorino Romano",
         "Świeżo zmielony czarny pieprz",
-        "Sól (do osolenia wody na makaron)"
+        "Sól (do wody)"
       ],
       "steps": [
         "Ugotuj makaron w mocno osolonej wodzie al dente.",
-        "W międzyczasie pokrój guanciale w kostkę i podsmaż na suchej patelni na złoty kolor.",
-        "W miseczce roztrzep jajka i wymieszaj je z połową startego sera oraz dużą ilością pieprzu.",
-        "Odcedź makaron (zachowując pół kubka wody z gotowania) i wrzuć na patelnię z guanciale. Dokładnie wymieszaj.",
-        "Zdejmij patelnię z ognia. Wlej masę jajeczno-serową i bardzo energicznie mieszaj, aby powstał gęsty, kremowy sos (w razie potrzeby dodaj odrobinę wody z makaronu).",
-        "Podawaj natychmiast, posypane resztą sera i świeżym pieprzem."
+        "Pokrój guanciale i podsmaż na suchej patelni.",
+        "Wymieszaj jajka z serem i pieprzem.",
+        "Odcedź makaron i wrzuć na patelnię z guanciale. Wymieszaj.",
+        "Zdejmij patelnię z ognia. Wlej masę jajeczną i energicznie mieszaj, aż powstanie kremowy sos.",
+        "Podawaj natychmiast."
       ]
     }
     '''
 
-# 3. Przygotowanie wiadomości 
 messages = [
-    {"role": "user", "content": "Przygotuj szczegółowy przepis na Spaghetti Carbonara."}
+    {"role": "user", "content": "Przygotuj przepis na Spaghetti Carbonara."}
 ]
 
-# Pobranie schematu z modelu Pydantic
-schema = Dish.model_json_schema() if hasattr(Dish, 'model_json_schema') else Dish.schema()
+# 3. Zabezpieczenie przed błędem wersji (Pydantic V1 vs V2) przy schemacie
+try:
+    schema = Dish.model_json_schema() # Pydantic V2
+except AttributeError:
+    schema = Dish.schema()            # Pydantic V1
 
-# Konfiguracja funkcji przekazywanej do LLM
 functions = [{
     "name": "Dish",
     "parameters": schema
 }]
 
-# 4. Wywołanie "API" (otrzymujemy string JSON z argumentami)
+# 4. Wywołanie mockowanego API
 function_call_arguments = call_api(messages, functions)
 
-# 5. Walidacja i parsowanie za pomocą Pydantic
-przepis = Dish.model_validate_json(function_call_arguments)
+# 5. Zabezpieczenie przed błędem wersji (Pydantic V1 vs V2) przy parsowaniu
+try:
+    przepis = Dish.model_validate_json(function_call_arguments) # Pydantic V2
+except AttributeError:
+    przepis = Dish.parse_raw(function_call_arguments)           # Pydantic V1
 
 # 6. Wyświetlenie wyników
 print(f"=== {przepis.dish.upper()} ===\n")
 
 print("SKŁADNIKI:")
-for sk w przepis.ingredients:
+for sk in przepis.ingredients:
     print(f" - {sk}")
 
 print("\nPRZYGOTOWANIE:")
-for i, krok w enumerate(przepis.steps, 1):
+for i, krok in enumerate(przepis.steps, 1):
     print(f" {i}. {krok}")
