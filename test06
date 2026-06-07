@@ -1,53 +1,55 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-# 1. Definicja zagnieżdżonych struktur z odpowiednimi nazwami klas
-class Ingredient(BaseModel):
-    name: str
-    amount: int
-    unit: str
+# 1. Definicja struktury z polami spam_reason oraz not_spam_reason
+class SpamClassification(BaseModel):
+    # Field(description="...") to świetny sposób, by podpowiedzieć modelowi AI, czego od niego oczekujemy
+    spam_reason: str = Field(description="Why this might be spam")
+    not_spam_reason: str = Field(description="Why this might be a legit message")
+    is_spam: bool
 
-class Step(BaseModel):
-    step_number: int
-    description: str
+# 2. Funkcja mockująca LLM (symuluje odpowiedź z wymuszonym schematem)
+def mock_llm_spam_check(message: str) -> str:
+    # Symulacja dla wiadomości spamowej
+    if "wygrałeś" in message.lower() or "darmowy" in message.lower():
+        return '''
+        {
+            "spam_reason": "Wiadomość obiecuje darmową wygraną, wymusza pośpiech (PILNE!) i zawiera podejrzany link.",
+            "not_spam_reason": "Istnieje minimalna szansa, że użytkownik brał udział w konkursie, o którym zapomniał.",
+            "is_spam": true
+        }
+        '''
+    # Symulacja dla zwykłej wiadomości
+    else:
+        return '''
+        {
+            "spam_reason": "Krótka treść może przypominać zautomatyzowane wiadomości od botów.",
+            "not_spam_reason": "To standardowa, naturalnie brzmiąca prośba o zmianę terminu spotkania biznesowego.",
+            "is_spam": false
+        }
+        '''
 
-class Dish(BaseModel):
-    name: str
-    ingredients: list[Ingredient]
-    steps: list[Step]
+# 3. Przykładowe wiadomości
+messages_to_test = [
+    "PILNE! Wygrałeś najnowszego smartfona! Kliknij w poniższy link: http://scam-strona.xyz",
+    "Cześć, czy moglibyśmy przełożyć nasze jutrzejsze spotkanie na godzinę 14:00? Pozdrawiam."
+]
 
-# 2. Symulacja odpowiedzi z modelu LLM (zamiast klienta OpenAI)
-mocked_llm_response = '''
-{
-  "name": "Spaghetti Carbonara",
-  "ingredients": [
-    {"name": "makaron spaghetti", "amount": 200, "unit": "g"},
-    {"name": "guanciale lub boczek", "amount": 150, "unit": "g"},
-    {"name": "jajka (rozmiar L)", "amount": 3, "unit": "szt."},
-    {"name": "ser Pecorino Romano", "amount": 50, "unit": "g"}
-  ],
-  "steps": [
-    {"step_number": 1, "description": "Ugotuj makaron w osolonej wodzie al dente."},
-    {"step_number": 2, "description": "Pokrój guanciale i podsmaż na suchej patelni."},
-    {"step_number": 3, "description": "Wymieszaj jajka z serem w osobnej misce."},
-    {"step_number": 4, "description": "Wrzuć makaron na patelnię z mięsem, zdejmij z ognia, dodaj masę jajeczną i energicznie wymieszaj."}
-  ]
-}
-'''
-
-# 3. Parsowanie JSON-a bezpośrednio do głównego obiektu Dish
-# Używamy try/except, aby kod zadziałał niezależnie od wersji Pydantic
-try:
-    parsed_dish = Dish.model_validate_json(mocked_llm_response) # Pydantic V2
-except AttributeError:
-    parsed_dish = Dish.parse_raw(mocked_llm_response)           # Pydantic V1
-
-# 4. Wyświetlenie zwalidowanych danych
-print(f"=== {parsed_dish.name.upper()} ===\n")
-
-print("SKŁADNIKI:")
-for ing in parsed_dish.ingredients:
-    print(f" - {ing.amount} {ing.unit} | {ing.name}")
-
-print("\nPRZYGOTOWANIE:")
-for step in parsed_dish.steps:
-    print(f" {step.step_number}. {step.description}")
+# 4. Wykonanie i wyświetlenie wyników
+for msg in messages_to_test:
+    print(f"Treść wiadomości: '{msg}'")
+    
+    # Symulacja pobrania wyniku z LLM w formacie JSON
+    json_response = mock_llm_spam_check(msg)
+    
+    # Walidacja Pydantic (kompatybilność z V1 i V2)
+    try:
+        result = SpamClassification.model_validate_json(json_response)
+    except AttributeError:
+        result = SpamClassification.parse_raw(json_response)
+        
+    # Wyświetlenie wyników
+    print("ANALIZA:")
+    print(f" - Dlaczego to może być SPAM:  {result.spam_reason}")
+    print(f" - Dlaczego to może być LEGIT: {result.not_spam_reason}")
+    print(f" - Ostateczna decyzja:         {'🔴 SPAM' if result.is_spam else '🟢 NIE SPAM'}")
+    print("-" * 60 + "\n")
