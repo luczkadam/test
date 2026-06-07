@@ -1,31 +1,40 @@
 from pydantic import BaseModel, Field
+from typing import List
 
-# 1. Definicja struktury adresowej
-class Address(BaseModel):
-    street: str = Field(description="Nazwa ulicy")
-    building_number: str = Field(description="Numer budynku/domu")
-    city: str = Field(description="Miasto")
-    zip_code: str = Field(description="Kod pocztowy")
+# 1. Struktura zagnieżdżona (Reasoner) – to "serce" Twojego zadania
+class Reasoner(BaseModel):
+    proposition: str = Field(description="Główne stwierdzenie lub cel wyszukiwania")
+    explainer: List[str] = Field(description="Lista logicznych argumentów uzasadniających propozycję")
 
-# 2. Symulacja odpowiedzi z modelu (zgodnie z formatem na screenach)
+# 2. Główna struktura SearchQuery
+class SearchQuery(BaseModel):
+    query: str = Field(description="Właściwe zapytanie wyszukiwania")
+    reasoner: Reasoner = Field(description="Struktura zawierająca logikę wyboru zapytania")
+
+# 3. Symulacja odpowiedzi z modelu (zgodnie z formatem na screenach)
 mocked_llm_output = '''
 {
-  "street": "Marszałkowska",
-  "building_number": "10/12",
-  "city": "Warszawa",
-  "zip_code": "00-001"
+  "query": "najlepsze laptopy do programowania 2026",
+  "reasoner": {
+    "proposition": "Użytkownik szuka sprzętu o wysokiej wydajności do pracy deweloperskiej.",
+    "explainer": [
+      "Deweloperzy potrzebują dużej ilości pamięci RAM (min. 32GB).",
+      "Ważna jest szybkość dysku SSD dla szybkiej kompilacji kodu.",
+      "Kluczowa jest dobra jakość ekranu przy długiej pracy."
+    ]
+  }
 }
 '''
 
-# 3. Parsowanie i walidacja
+# 4. Parsowanie i walidacja
 try:
-    address = Address.model_validate_json(mocked_llm_output)
+    search_data = SearchQuery.model_validate_json(mocked_llm_output)
 except AttributeError:
-    address = Address.parse_raw(mocked_llm_output)
+    search_data = SearchQuery.parse_raw(mocked_llm_output)
 
-# 4. Wyświetlenie zwalidowanych danych
-print("--- WYEKSTRAHOWANY ADRES ---")
-print(f"Ulica: {address.street}")
-print(f"Numer: {address.building_number}")
-print(f"Miasto: {address.city}")
-print(f"Kod:   {address.zip_code}")
+# 5. Wyświetlenie wyników
+print(f"ZAPYTANIE: {search_data.query}")
+print(f"LOGIKA:    {search_data.reasoner.proposition}")
+print("UZASADNIENIE:")
+for point in search_data.reasoner.explainer:
+    print(f" - {point}")
