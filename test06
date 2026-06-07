@@ -1,47 +1,52 @@
 import json
 
+# Definicja instrukcji systemowej wymuszającej strukturę JSON
 system_prompt = """
-Jesteś precyzyjnym asystentem kulinarnym. Otrzymasz listę składników z miarami domowymi (np. szklanki, łyżki).
-Twoim zadaniem jest przeliczenie tych miar na precyzyjne miary wagowe lub objętościowe (gramy dla ciał stałych, mililitry dla płynów).
-
-Zwróć WYŁĄCZNIE poprawny obiekt JSON.
-Struktura JSON:
+Jesteś doświadczonym szefem kuchni. Twoim zadaniem jest wygenerowanie szczegółowego przepisu kulinarnego.
+Zwróć WYŁĄCZNIE poprawny obiekt JSON o następującej strukturze:
 {
-  "zakupy": [
-    {"produkt": "nazwa", "ilość": liczba_całkowita, "jednostka": "g / ml / szt."}
-  ]
+  "nazwa_dania": "string",
+  "czas_przygotowania": "string (np. 30 minut)",
+  "skladniki": ["lista", "stringów"],
+  "instrukcje": ["lista", "kolejnych", "kroków"]
 }
 """
 
-lista_wejsciowa = """
-Oto lista zakupów:
-1 szklanka mąki pszennej
-2 szklanki mleka
-2 jajka
-3 łyżki oleju
-1 szczypta soli
-"""
-
-def mock_llm_call(system: str, user: str) -> str:
-    # Symulujemy odpowiedź modelu, który poprawnie przeliczył szklanki i łyżki na gramy i mililitry
+def call_api(messages: list) -> str:
+    # Symulacja odpowiedzi z modelu LLM (wymuszony format JSON)
+    # Model na podstawie promptu użytkownika zwraca przepis na Carbonarę
     return '''
     {
-      "zakupy": [
-        {"produkt": "mąka pszenna", "ilość": 150, "jednostka": "g"},
-        {"produkt": "mleko", "ilość": 500, "jednostka": "ml"},
-        {"produkt": "jajka", "ilość": 2, "jednostka": "szt."},
-        {"produkt": "olej", "ilość": 45, "jednostka": "ml"},
-        {"produkt": "sól", "ilość": 1, "jednostka": "g"}
+      "nazwa_dania": "Spaghetti Carbonara",
+      "czas_przygotowania": "20 minut",
+      "skladniki": [
+        "200g makaronu spaghetti",
+        "100g guanciale (lub dobrej jakości boczku)",
+        "2 duże jajka",
+        "50g tartego sera Pecorino Romano",
+        "świeżo zmielony czarny pieprz",
+        "sól (tylko do wody po makaronie)"
+      ],
+      "instrukcje": [
+        "Ugotuj makaron w mocno osolonej wodzie al dente.",
+        "W międzyczasie pokrój guanciale w kostkę i podsmaż na suchej patelni na złoty kolor.",
+        "W miseczce roztrzep jajka i wymieszaj je z połową startego sera oraz dużą ilością pieprzu.",
+        "Odcedź makaron (zachowując pół kubka wody z gotowania) i wrzuć na patelnię z guanciale. Dokładnie wymieszaj.",
+        "Zdejmij patelnię z ognia. Po chwili wlej masę jajeczno-serową, bardzo energicznie i szybko mieszając, aby powstał gęsty, kremowy sos (uważaj, by nie zrobić jajecznicy). W razie potrzeby dodaj odrobinę wody z makaronu.",
+        "Podawaj natychmiast, posypane resztą sera i świeżym pieprzem."
       ]
     }
     '''
 
-# 1. Przekazanie promptu i danych użytkownika do "modelu"
-response_text = mock_llm_call(system_prompt, lista_wejsciowa)
+# Lista wiadomości przekazywana do "modelu"
+messages = [
+    {"role": "system", "content": system_prompt},
+    {"role": "user", "content": "Poproszę o szczegółowy przepis na Spaghetti Carbonara."}
+]
 
-# 2. Odczytanie zwróconego tekstu jako pełnoprawny obiekt JSON
-wyekstrahowane_dane = json.loads(response_text)
+# Wywołanie funkcji
+response_text = call_api(messages)
 
-# 3. Wypisanie wyniku
-print("--- PRZELICZONA LISTA ZAKUPÓW ---")
-print(json.dumps(wyekstrahowane_dane, indent=2, ensure_ascii=False))
+# Parsowanie i wyświetlenie wyniku w sformatowanej postaci
+przepis_json = json.loads(response_text)
+print(json.dumps(przepis_json, indent=2, ensure_ascii=False))
