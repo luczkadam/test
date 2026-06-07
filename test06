@@ -1,55 +1,112 @@
+import json
 from pydantic import BaseModel, Field
+from typing import List, Optional
 
-# 1. Definicja struktury z polami spam_reason oraz not_spam_reason
-class SpamClassification(BaseModel):
-    # Field(description="...") to świetny sposób, by podpowiedzieć modelowi AI, czego od niego oczekujemy
-    spam_reason: str = Field(description="Why this might be spam")
-    not_spam_reason: str = Field(description="Why this might be a legit message")
-    is_spam: bool
+# 1. Struktura dla prostych pytań i odpowiedzi (np. Q&A przed wyjazdem)
+class QuestionAnswer(BaseModel):
+    question: str
+    answer: str
 
-# 2. Funkcja mockująca LLM (symuluje odpowiedź z wymuszonym schematem)
-def mock_llm_spam_check(message: str) -> str:
-    # Symulacja dla wiadomości spamowej
-    if "wygrałeś" in message.lower() or "darmowy" in message.lower():
-        return '''
+# 2. Struktura zagnieżdżona odpowiadająca za "co" (proposition) i "dlaczego" (explainer)
+class Reasoner(BaseModel):
+    proposition: str = Field(
+        ..., 
+        description="A statement or assertion that is being reasoned about. This is the main claim or proposition."
+    )
+    explainer: List[str] = Field(
+        ..., 
+        description="An explanation or justification for the proposition. Provides reasoning or support."
+    )
+
+# 3. Główny model planera podróży
+class TravelPlanner(BaseModel):
+    important_questions: List[QuestionAnswer] = Field(
+        ..., 
+        description="A list of the most important questions to consider when planning the trip."
+    )
+    must_have: List[QuestionAnswer] = Field(
+        ..., 
+        description="A list of essential things that must be included in the trip planning."
+    )
+    destinations: List[Reasoner] = Field(
+        ..., 
+        description="A list of destinations to visit during the trip."
+    )
+    additional_notes: Optional[str] = Field(
+        None, 
+        description="Any additional notes or tips for the trip."
+    )
+
+# 4. Funkcja mockująca LLM (symuluje wygenerowanie spersonalizowanego planu dla rodziny)
+def mock_llm_travel_plan() -> str:
+    return '''
+    {
+      "important_questions": [
         {
-            "spam_reason": "Wiadomość obiecuje darmową wygraną, wymusza pośpiech (PILNE!) i zawiera podejrzany link.",
-            "not_spam_reason": "Istnieje minimalna szansa, że użytkownik brał udział w konkursie, o którym zapomniał.",
-            "is_spam": true
-        }
-        '''
-    # Symulacja dla zwykłej wiadomości
-    else:
-        return '''
+          "question": "Jak radzić sobie z sierpniowymi upałami w Rzymie?",
+          "answer": "Zwiedzajcie wcześnie rano i późnym popołudniem. W środku dnia warto odpoczywać w cieniu lub klimatyzowanych wnętrzach."
+        },
         {
-            "spam_reason": "Krótka treść może przypominać zautomatyzowane wiadomości od botów.",
-            "not_spam_reason": "To standardowa, naturalnie brzmiąca prośba o zmianę terminu spotkania biznesowego.",
-            "is_spam": false
+          "question": "Jak sprawnie przemieszczać się po mieście?",
+          "answer": "Warto korzystać z metra, które dociera do najważniejszych punktów. To najszybsza i najwygodniejsza opcja dla większej grupy."
         }
-        '''
+      ],
+      "must_have": [
+        {
+          "question": "Bilety online",
+          "answer": "Kupcie wejściówki do najważniejszych atrakcji z kilkutygodniowym wyprzedzeniem przez internet, by uniknąć wielogodzinnego stania w słońcu."
+        },
+        {
+          "question": "Butelki z filtrem lub bidony",
+          "answer": "W Rzymie woda z ulicznych kraników (tzw. nasoni) jest darmowa i zdatna do picia."
+        }
+      ],
+      "destinations": [
+        {
+          "proposition": "Watykan i wejście na kopułę Bazyliki św. Piotra.",
+          "explainer": [
+            "Jest to najmniejsze państwo na świecie.",
+            "Warto zobaczyć Bazylikę św. Piotra i Kaplicę Sykstyńską.",
+            "Z kopuły roztacza się niesamowity widok na miasto, co świetnie urozmaici wycieczkę."
+          ]
+        },
+        {
+          "proposition": "Koloseum i Forum Romanum jako starożytne serce miasta.",
+          "explainer": [
+            "To starożytny amfiteatr z niesamowitą architekturą.",
+            "Niezwykle pobudza wyobraźnię syna i córki o starożytnych gladiatorach, stając się żywą lekcją historii.",
+            "Można zwiedzać wnętrze i dowiedzieć się więcej o realiach tamtych czasów."
+          ]
+        },
+        {
+          "proposition": "Fontanna di Trevi oraz wieczorny spacer po centrum.",
+          "explainer": [
+            "Jest to jedna z najbardziej znanych fontann na świecie.",
+            "Zgodnie z tradycją, wrzucenie monety zapewnia powrót do Rzymu, co jest świetną zabawą.",
+            "Po intensywnym dniu to idealne miejsce na spokojny wieczorny spacer z żoną."
+          ]
+        }
+      ],
+      "additional_notes": "Tradycyjne włoskie śniadania opierają się głównie na słodkich wypiekach (np. cornetto). Jeśli wolicie na start dnia proste, szybkie dania białkowe, najlepiej od razu zaopatrzyć się w lokalnym markecie w jajka czy skyr, by móc przygotować coś na szybko w miejscu zakwaterowania przed wyjściem w miasto."
+    }
+    '''
 
-# 3. Przykładowe wiadomości
-messages_to_test = [
-    "PILNE! Wygrałeś najnowszego smartfona! Kliknij w poniższy link: http://scam-strona.xyz",
-    "Cześć, czy moglibyśmy przełożyć nasze jutrzejsze spotkanie na godzinę 14:00? Pozdrawiam."
-]
+# 5. Pobranie i walidacja danych (kompatybilność Pydantic V1 i V2)
+json_response = mock_llm_travel_plan()
 
-# 4. Wykonanie i wyświetlenie wyników
-for msg in messages_to_test:
-    print(f"Treść wiadomości: '{msg}'")
-    
-    # Symulacja pobrania wyniku z LLM w formacie JSON
-    json_response = mock_llm_spam_check(msg)
-    
-    # Walidacja Pydantic (kompatybilność z V1 i V2)
-    try:
-        result = SpamClassification.model_validate_json(json_response)
-    except AttributeError:
-        result = SpamClassification.parse_raw(json_response)
-        
-    # Wyświetlenie wyników
-    print("ANALIZA:")
-    print(f" - Dlaczego to może być SPAM:  {result.spam_reason}")
-    print(f" - Dlaczego to może być LEGIT: {result.not_spam_reason}")
-    print(f" - Ostateczna decyzja:         {'🔴 SPAM' if result.is_spam else '🟢 NIE SPAM'}")
-    print("-" * 60 + "\n")
+try:
+    plan = TravelPlanner.model_validate_json(json_response)
+except AttributeError:
+    plan = TravelPlanner.parse_raw(json_response)
+
+# 6. Formatowanie i wyświetlenie wyniku zgodnie ze zrzutem ekranu
+print("[Co warto odwiedzić?]\n")
+
+for dest in plan.destinations:
+    print(f"Propozycja: {dest.proposition}")
+    # Zamiana listy stringów na format z apostrofami, aby wyglądało jak w przykładzie
+    dlaczego_str = "['" + "', '".join(dest.explainer) + "']"
+    print(f"Dlaczego?: {dlaczego_str}\n")
+
+print("\n" + "="*50 + "\n")
+print("[Dodatkowe Notatki]\n", plan.additional_notes)
