@@ -2,84 +2,25 @@ import json
 from pydantic import BaseModel
 from typing import List
 
-# 1. Niezależna struktura dla pojedynczego składnika
+# 1. Struktura dla pojedynczego składnika
 class Ingredient(BaseModel):
     name: str
     amount: float
     unit: str
 
-# 2. Niezależna struktura dla pojedynczego kroku przygotowania
+# 2. Struktura dla pojedynczego kroku przygotowania
 class Step(BaseModel):
     step_number: int
     description: str
 
-# 3. Główna struktura potrawy, która wykorzystuje modele zdefiniowane wyżej (Nested Structure)
+# 3. Główna struktura potrawy (zawiera listy składników i kroków)
 class Dish(BaseModel):
     dish_name: str
     ingredients: List[Ingredient]
     steps: List[Step]
 
-# Funkcja mockująca odpowiedź modelu (zwraca zagnieżdżony JSON dopasowany do naszych 3 modeli)
-def call_api(messages: list, functions: list) -> str:
-    return '''
-    {
-      "dish_name": "Spaghetti Carbonara",
-      "ingredients": [
-        {"name": "makaron spaghetti", "amount": 200, "unit": "g"},
-        {"name": "guanciale (lub boczek)", "amount": 100, "unit": "g"},
-        {"name": "jajka (rozmiar L)", "amount": 2, "unit": "szt."},
-        {"name": "ser Pecorino Romano", "amount": 50, "unit": "g"},
-        {"name": "świeżo zmielony czarny pieprz", "amount": 1, "unit": "szczypta"},
-        {"name": "sól (do wody po makaronie)", "amount": 1, "unit": "szczypta"}
-      ],
-      "steps": [
-        {"step_number": 1, "description": "Ugotuj makaron w mocno osolonej wodzie al dente."},
-        {"step_number": 2, "description": "W międzyczasie pokrój guanciale w kostkę i podsmaż na suchej patelni."},
-        {"step_number": 3, "description": "W miseczce roztrzep jajka i wymieszaj je z połową startego sera oraz pieprzem."},
-        {"step_number": 4, "description": "Odcedź makaron i wrzuć na patelnię z guanciale. Dokładnie wymieszaj."},
-        {"step_number": 5, "description": "Zdejmij patelnię z ognia. Wlej masę jajeczno-serową i szybko wymieszaj, tworząc kremowy sos."},
-        {"step_number": 6, "description": "Podawaj natychmiast, posypane resztą sera i pieprzem."}
-      ]
-    }
-    '''
+# Pobranie schematu JSON dla głównego modelu (Pydantic V2)
+schema = Dish.model_json_schema()
 
-messages = [
-    {"role": "user", "content": "Przygotuj przepis na Spaghetti Carbonara."}
-]
-
-# Pobranie schematu (zabezpieczenie Pydantic V1/V2)
-try:
-    schema = Dish.model_json_schema()
-except AttributeError:
-    schema = Dish.schema()
-
-functions = [{
-    "name": "Dish",
-    "parameters": schema
-}]
-
-# Wywołanie API z naszym zagnieżdżonym schematem
-function_call_arguments = call_api(messages, functions)
-
-# Uniwersalne parsowanie (działa w obu wersjach Pydantic)
-parsed_dict = json.loads(function_call_arguments)
-przepis = Dish(**parsed_dict)
-
-# --- WYŚWIETLANIE WYNIKÓW ---
-
-print("=== 1. WYGENEROWANY SCHEMAT PYDANTIC (JSON SCHEMA) ===")
-# Ten schemat pokaże sekcję $defs (lub definitions), w której zdefiniowano Ingredient i Step!
-print(json.dumps(schema, indent=2, ensure_ascii=False))
-
-print("\n=== 2. ZWALIDOWANY OBIEKT PRZEPISU ===")
-print(f"Potrawa: {przepis.dish_name.upper()}\n")
-
-print("Składniki:")
-for ing in przepis.ingredients:
-    # Odwołujemy się do właściwości obiektu Ingredient
-    print(f" - {ing.amount} {ing.unit} | {ing.name}")
-
-print("\nPrzygotowanie:")
-for stp in przepis.steps:
-    # Odwołujemy się do właściwości obiektu Step
-    print(f" {stp.step_number}. {stp.description}")
+# Wyświetlenie struktury na konsoli
+print(json.dumps(schema, indent=2))
