@@ -1,52 +1,66 @@
 import json
+from pydantic import BaseModel
+from typing import List
 
-# Definicja instrukcji systemowej wymuszającej strukturę JSON
-system_prompt = """
-Jesteś doświadczonym szefem kuchni. Twoim zadaniem jest wygenerowanie szczegółowego przepisu kulinarnego.
-Zwróć WYŁĄCZNIE poprawny obiekt JSON o następującej strukturze:
-{
-  "nazwa_dania": "string",
-  "czas_przygotowania": "string (np. 30 minut)",
-  "skladniki": ["lista", "stringów"],
-  "instrukcje": ["lista", "kolejnych", "kroków"]
-}
-"""
+# 1. Definicja schematu za pomocą Pydantic
+class Dish(BaseModel):
+    dish: str
+    ingredients: List[str]
+    steps: List[str]
 
-def call_api(messages: list) -> str:
-    # Symulacja odpowiedzi z modelu LLM (wymuszony format JSON)
-    # Model na podstawie promptu użytkownika zwraca przepis na Carbonarę
+# 2. Funkcja mockująca (zastępuje wywołanie klienta OpenAI)
+def call_api(messages: list, functions: list) -> str:
+    # Symulujemy argumenty zwrócone przez wywołanie funkcji LLM
+    # Dane są dostosowane do modelu Pydantic (dish, ingredients, steps)
     return '''
     {
-      "nazwa_dania": "Spaghetti Carbonara",
-      "czas_przygotowania": "20 minut",
-      "skladniki": [
+      "dish": "Spaghetti Carbonara",
+      "ingredients": [
         "200g makaronu spaghetti",
         "100g guanciale (lub dobrej jakości boczku)",
         "2 duże jajka",
         "50g tartego sera Pecorino Romano",
-        "świeżo zmielony czarny pieprz",
-        "sól (tylko do wody po makaronie)"
+        "Świeżo zmielony czarny pieprz",
+        "Sól (do osolenia wody na makaron)"
       ],
-      "instrukcje": [
+      "steps": [
         "Ugotuj makaron w mocno osolonej wodzie al dente.",
         "W międzyczasie pokrój guanciale w kostkę i podsmaż na suchej patelni na złoty kolor.",
         "W miseczce roztrzep jajka i wymieszaj je z połową startego sera oraz dużą ilością pieprzu.",
         "Odcedź makaron (zachowując pół kubka wody z gotowania) i wrzuć na patelnię z guanciale. Dokładnie wymieszaj.",
-        "Zdejmij patelnię z ognia. Po chwili wlej masę jajeczno-serową, bardzo energicznie i szybko mieszając, aby powstał gęsty, kremowy sos (uważaj, by nie zrobić jajecznicy). W razie potrzeby dodaj odrobinę wody z makaronu.",
+        "Zdejmij patelnię z ognia. Wlej masę jajeczno-serową i bardzo energicznie mieszaj, aby powstał gęsty, kremowy sos (w razie potrzeby dodaj odrobinę wody z makaronu).",
         "Podawaj natychmiast, posypane resztą sera i świeżym pieprzem."
       ]
     }
     '''
 
-# Lista wiadomości przekazywana do "modelu"
+# 3. Przygotowanie wiadomości 
 messages = [
-    {"role": "system", "content": system_prompt},
-    {"role": "user", "content": "Poproszę o szczegółowy przepis na Spaghetti Carbonara."}
+    {"role": "user", "content": "Przygotuj szczegółowy przepis na Spaghetti Carbonara."}
 ]
 
-# Wywołanie funkcji
-response_text = call_api(messages)
+# Pobranie schematu z modelu Pydantic
+schema = Dish.model_json_schema() if hasattr(Dish, 'model_json_schema') else Dish.schema()
 
-# Parsowanie i wyświetlenie wyniku w sformatowanej postaci
-przepis_json = json.loads(response_text)
-print(json.dumps(przepis_json, indent=2, ensure_ascii=False))
+# Konfiguracja funkcji przekazywanej do LLM
+functions = [{
+    "name": "Dish",
+    "parameters": schema
+}]
+
+# 4. Wywołanie "API" (otrzymujemy string JSON z argumentami)
+function_call_arguments = call_api(messages, functions)
+
+# 5. Walidacja i parsowanie za pomocą Pydantic
+przepis = Dish.model_validate_json(function_call_arguments)
+
+# 6. Wyświetlenie wyników
+print(f"=== {przepis.dish.upper()} ===\n")
+
+print("SKŁADNIKI:")
+for sk w przepis.ingredients:
+    print(f" - {sk}")
+
+print("\nPRZYGOTOWANIE:")
+for i, krok w enumerate(przepis.steps, 1):
+    print(f" {i}. {krok}")
