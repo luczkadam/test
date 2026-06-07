@@ -1,40 +1,40 @@
 from pydantic import BaseModel, Field
+from enum import Enum
 from typing import List
 
-# 1. Struktura zagnieżdżona (Reasoner) – to "serce" Twojego zadania
-class Reasoner(BaseModel):
-    proposition: str = Field(description="Główne stwierdzenie lub cel wyszukiwania")
-    explainer: List[str] = Field(description="Lista logicznych argumentów uzasadniających propozycję")
+# 1. Definicja Enum dla atrybutów (ograniczenie wyboru modelu do konkretnych opcji)
+class AttributeName(str, Enum):
+    COLOR = "kolor"
+    SIZE = "rozmiar"
+    MATERIAL = "materiał"
+    BRAND = "marka"
 
-# 2. Główna struktura SearchQuery
-class SearchQuery(BaseModel):
-    query: str = Field(description="Właściwe zapytanie wyszukiwania")
-    reasoner: Reasoner = Field(description="Struktura zawierająca logikę wyboru zapytania")
+# 2. Struktura dla pojedynczego atrybutu
+class Attribute(BaseModel):
+    name: AttributeName = Field(description="Nazwa atrybutu wybrana z listy")
+    value: str = Field(description="Wartość atrybutu wyekstrahowana z tekstu")
 
-# 3. Symulacja odpowiedzi z modelu (zgodnie z formatem na screenach)
+# 3. Główna struktura zbierająca listę atrybutów
+class ProductAttributes(BaseModel):
+    attributes: List[Attribute]
+
+# 4. Symulacja odpowiedzi z modelu (zgodnie z formatem na screenach)
 mocked_llm_output = '''
 {
-  "query": "najlepsze laptopy do programowania 2026",
-  "reasoner": {
-    "proposition": "Użytkownik szuka sprzętu o wysokiej wydajności do pracy deweloperskiej.",
-    "explainer": [
-      "Deweloperzy potrzebują dużej ilości pamięci RAM (min. 32GB).",
-      "Ważna jest szybkość dysku SSD dla szybkiej kompilacji kodu.",
-      "Kluczowa jest dobra jakość ekranu przy długiej pracy."
-    ]
-  }
+  "attributes": [
+    {"name": "kolor", "value": "czerwony"},
+    {"name": "rozmiar", "value": "XL"},
+    {"name": "materiał", "value": "bawełna"}
+  ]
 }
 '''
 
-# 4. Parsowanie i walidacja
+# 5. Parsowanie i walidacja
 try:
-    search_data = SearchQuery.model_validate_json(mocked_llm_output)
+    product = ProductAttributes.model_validate_json(mocked_llm_output)
 except AttributeError:
-    search_data = SearchQuery.parse_raw(mocked_llm_output)
+    product = ProductAttributes.parse_raw(mocked_llm_output)
 
-# 5. Wyświetlenie wyników
-print(f"ZAPYTANIE: {search_data.query}")
-print(f"LOGIKA:    {search_data.reasoner.proposition}")
-print("UZASADNIENIE:")
-for point in search_data.reasoner.explainer:
-    print(f" - {point}")
+# 6. Wyświetlenie wyników
+for attr in product.attributes:
+    print(f"{attr.name.value.capitalize()}: {attr.value}")
