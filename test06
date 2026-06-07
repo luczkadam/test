@@ -8,7 +8,7 @@ class Dish(BaseModel):
     ingredients: List[str]
     steps: List[str]
 
-# 2. Funkcja mockująca (zastępuje wywołanie API)
+# 2. Funkcja mockująca
 def call_api(messages: list, functions: list) -> str:
     return '''
     {
@@ -36,11 +36,11 @@ messages = [
     {"role": "user", "content": "Przygotuj przepis na Spaghetti Carbonara."}
 ]
 
-# 3. Zabezpieczenie przed błędem wersji (Pydantic V1 vs V2) przy schemacie
+# 3. Schemat - Pydantic V2 / V1
 try:
-    schema = Dish.model_json_schema() # Pydantic V2
+    schema = Dish.model_json_schema()
 except AttributeError:
-    schema = Dish.schema()            # Pydantic V1
+    schema = Dish.schema()
 
 functions = [{
     "name": "Dish",
@@ -50,11 +50,10 @@ functions = [{
 # 4. Wywołanie mockowanego API
 function_call_arguments = call_api(messages, functions)
 
-# 5. Zabezpieczenie przed błędem wersji (Pydantic V1 vs V2) przy parsowaniu
-try:
-    przepis = Dish.model_validate_json(function_call_arguments) # Pydantic V2
-except AttributeError:
-    przepis = Dish.parse_raw(function_call_arguments)           # Pydantic V1
+# 5. UNIWERSALNE PARSOWANIE (działa w Pydantic V1 i V2)
+# Najpierw zmieniamy string na słownik Pythonowy, a potem ładujemy go do Pydantic
+parsed_dict = json.loads(function_call_arguments)
+przepis = Dish(**parsed_dict)
 
 # 6. Wyświetlenie wyników
 print(f"=== {przepis.dish.upper()} ===\n")
