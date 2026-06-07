@@ -1,97 +1,31 @@
-def call_api(messages):
-    return """<attribute_list>
-1. Country
-   Description: The country where the job is located. Handles codes and full names.
-   Possible values: [United States, UK, Poland, Germany, null]
-   Examples: "US", "United States", "Poland"
+import json
 
-2. City
-   Description: The specific city or cities mentioned in the string.
-   Possible values: [London, New York, San Francisco, null]
-   Examples: "London", "SF", "NYC"
-
-3. Work Mode
-   Description: Indicates if the role is remote, hybrid, or on-site.
-   Possible values: [Remote, Hybrid, On-site, null]
-   Examples: "Remote", "Hybrid", "On-site"
-
-4. Region
-   Description: Broader geographical area if specific country/city is missing.
-   Possible values: [EMEA, LatAm, APAC, null]
-   Examples: "EMEA", "LatAm"
-
-5. State/Province
-   Description: Regional state or province, especially for US locations.
-   Possible values: [CA, NY, TX, null]
-   Examples: "CA", "NY"
-
-6. Multi-Location Flag
-   Description: Indicates if the job allows choosing between multiple specific places.
-   Possible values: [True, False]
-   Examples: "SF, NYC or Remote", "London"
-
-7. Country Code
-   Description: Extracted ISO country code if provided instead of full name.
-   Possible values: [US, UK, PL, null]
-   Examples: "US", "UK"
-</attribute_list>"""
-
-def analyze_locations(raw_locations):
-    system_prompt = """
-You are a location data expert tasked with discovering structured attributes that can be consistently extracted from raw job posting location strings.
-
-## Your Task:
-Analyze the provided location strings and identify the 7 most important attributes that can be reliably extracted across formats.
-
-## Include attributes that are:
-- Common across many location strings
-- Useful for filtering, grouping, or mapping job offers
-- Consistent - extractable even from partial/messy data
-
-## Exclude attributes that are:
-- Too rare (appear in only a few strings)
-- Redundant with other attributes
-- Not actionable for job market analysis
-
-## Edge cases to handle:
-- Remote / hybrid / on-site indicators
-- Multi-city strings ("London, New York or Remote")
-- Country codes vs full names ("US" vs "United States")
-- Regions without specific places ("EMEA", "LatAm")
-- Ambiguous strings ("Remote" with no country context)
-
-## For each attribute provide:
-- Clear, concise name
-- Brief description
-- Possible values (realistic, not exhaustive)
-- 3 real examples copied verbatim from the provided data
-
-## Output Format:
-<attribute_list>
-1. [Attribute Name]
-   Description: ...
-   Possible values: [value1, value2, ...]
-   Examples: "...", "...", "..."
-
-2. [Attribute Name]
-   ...
-</attribute_list>
+system_prompt = """
+Wygeneruj listę zakupów w formacie JSON dla przepisu na naleśniki. 
+Zwróć WYŁĄCZNIE poprawny obiekt JSON z głównym kluczem 'zakupy', zawierającym listę obiektów z polami: 'produkt', 'ilość', 'jednostka'.
 """
 
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": str(raw_locations)}
-    ]
-    
-    print(call_api(messages))
+def mock_llm_call(prompt: str) -> str:
+    # Symulujemy odpowiedź, którą normalnie wygenerowałoby AI
+    return '''
+    {
+      "zakupy": [
+        {"produkt": "mąka pszenna", "ilość": 250, "jednostka": "g"},
+        {"produkt": "mleko", "ilość": 500, "jednostka": "ml"},
+        {"produkt": "jajka", "ilość": 2, "jednostka": "szt."},
+        {"produkt": "olej", "ilość": 3, "jednostka": "łyżki"},
+        {"produkt": "sól", "ilość": 1, "jednostka": "szczypta"}
+      ]
+    }
+    '''
 
-raw_data = [
-    "Remote",
-    "London, New York or Remote",
-    "SF, CA",
-    "United States (Hybrid)",
-    "EMEA",
-    "Warsaw, Poland (On-site)"
+messages = [
+    {"role": "system", "content": system_prompt}
 ]
 
-analyze_locations(raw_data)
+# Symulacja wywołania API
+response_text = mock_llm_call(messages[0]["content"])
+
+# Parsowanie i ładne wyświetlenie wyniku
+parsed_json = json.loads(response_text)
+print(json.dumps(parsed_json, indent=2, ensure_ascii=False))
