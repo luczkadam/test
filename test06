@@ -1,46 +1,22 @@
-from pydantic import BaseModel, Field
-from enum import Enum
+from pydantic import RootModel
 from typing import List
 
-# 1. Definicja kategorii atrybutów dotyczących osób
-class AttributeName(str, Enum):
-    ROLE = "rola"
-    DEPARTMENT = "dział"
-    SKILL = "umiejętność"
-    LOCATION = "lokalizacja"
-    EXPERIENCE = "doświadczenie"
-    SENIORITY = "poziom"
-
-# 2. Struktura dla pojedynczego atrybutu osoby
+# Twój model atrybutu pozostaje bez zmian
 class PersonAttribute(BaseModel):
-    name: AttributeName = Field(description="Kategoria atrybutu osoby")
-    value: str = Field(description="Wartość atrybutu (np. 'Programista', '5 lat')")
+    name: str
+    value: str
 
-# 3. Główna struktura zbierająca atrybuty dla danej osoby
-class PersonAttributes(BaseModel):
-    attributes: List[PersonAttribute] = Field(..., description="Lista cech danej osoby")
+# KLUCZOWY ZMIANA: Używamy RootModel, żeby Pydantic wiedział, 
+# że oczekujemy listy na samym początku dokumentu JSON
+class PersonList(RootModel):
+    root: List[PersonAttribute]
 
-# 4. Symulacja odpowiedzi LLM dla danych osobowych
-mocked_llm_output = '''
-{
-  "attributes": [
-    {"name": "rola", "value": "Project Manager"},
-    {"name": "dział", "value": "IT"},
-    {"name": "umiejętność", "value": "Scrum, Agile"},
-    {"name": "lokalizacja", "value": "Łódź"},
-    {"name": "poziom", "value": "Senior"},
-    {"name": "doświadczenie", "value": "8 lat"}
-  ]
-}
-'''
+# Teraz, gdy przekażesz JSON w formie listy:
+mock_json = '[{"name": "rola", "value": "PM"}, {"name": "lokalizacja", "value": "Łódź"}]'
 
-# 5. Parsowanie i walidacja
-try:
-    person = PersonAttributes.model_validate_json(mocked_llm_output)
-except AttributeError:
-    person = PersonAttributes.parse_raw(mocked_llm_output)
+# Pydantic poprawnie rozpozna, że to jest lista elementów
+results = PersonList.model_validate_json(mock_json)
 
-# 6. Wyświetlenie profilu osoby
-print(f"=== PROFIL PRACOWNIKA ===")
-for attr in person.attributes:
-    print(f"{attr.name.value.capitalize():<15} : {attr.value}")
+# Teraz możesz iterować po wynikach bezpośrednio:
+for item in results.root:
+    print(item.name, item.value)
