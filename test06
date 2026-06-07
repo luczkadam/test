@@ -1,112 +1,48 @@
-import json
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List
 
-# 1. Struktura dla prostych pytań i odpowiedzi (np. Q&A przed wyjazdem)
-class QuestionAnswer(BaseModel):
-    question: str
-    answer: str
-
-# 2. Struktura zagnieżdżona odpowiadająca za "co" (proposition) i "dlaczego" (explainer)
+# 1. Struktura dla pojedynczej propozycji z uzasadnieniem (Reasoner)
 class Reasoner(BaseModel):
-    proposition: str = Field(
-        ..., 
-        description="A statement or assertion that is being reasoned about. This is the main claim or proposition."
-    )
-    explainer: List[str] = Field(
-        ..., 
-        description="An explanation or justification for the proposition. Provides reasoning or support."
-    )
+    proposition: str = Field(description="Główne stwierdzenie lub propozycja")
+    explainer: List[str] = Field(description="Lista argumentów lub uzasadnień dla propozycji")
 
-# 3. Główny model planera podróży
-class TravelPlanner(BaseModel):
-    important_questions: List[QuestionAnswer] = Field(
-        ..., 
-        description="A list of the most important questions to consider when planning the trip."
-    )
-    must_have: List[QuestionAnswer] = Field(
-        ..., 
-        description="A list of essential things that must be included in the trip planning."
-    )
-    destinations: List[Reasoner] = Field(
-        ..., 
-        description="A list of destinations to visit during the trip."
-    )
-    additional_notes: Optional[str] = Field(
-        None, 
-        description="Any additional notes or tips for the trip."
-    )
+# 2. Główna struktura zadania
+class TaskResponse(BaseModel):
+    propositions: List[Reasoner]
 
-# 4. Funkcja mockująca LLM (symuluje wygenerowanie spersonalizowanego planu dla rodziny)
-def mock_llm_travel_plan() -> str:
-    return '''
+# 3. Symulacja odpowiedzi z modelu (zgodnie z formatem na screenach)
+mocked_llm_output = '''
+{
+  "propositions": [
     {
-      "important_questions": [
-        {
-          "question": "Jak radzić sobie z sierpniowymi upałami w Rzymie?",
-          "answer": "Zwiedzajcie wcześnie rano i późnym popołudniem. W środku dnia warto odpoczywać w cieniu lub klimatyzowanych wnętrzach."
-        },
-        {
-          "question": "Jak sprawnie przemieszczać się po mieście?",
-          "answer": "Warto korzystać z metra, które dociera do najważniejszych punktów. To najszybsza i najwygodniejsza opcja dla większej grupy."
-        }
-      ],
-      "must_have": [
-        {
-          "question": "Bilety online",
-          "answer": "Kupcie wejściówki do najważniejszych atrakcji z kilkutygodniowym wyprzedzeniem przez internet, by uniknąć wielogodzinnego stania w słońcu."
-        },
-        {
-          "question": "Butelki z filtrem lub bidony",
-          "answer": "W Rzymie woda z ulicznych kraników (tzw. nasoni) jest darmowa i zdatna do picia."
-        }
-      ],
-      "destinations": [
-        {
-          "proposition": "Watykan i wejście na kopułę Bazyliki św. Piotra.",
-          "explainer": [
-            "Jest to najmniejsze państwo na świecie.",
-            "Warto zobaczyć Bazylikę św. Piotra i Kaplicę Sykstyńską.",
-            "Z kopuły roztacza się niesamowity widok na miasto, co świetnie urozmaici wycieczkę."
-          ]
-        },
-        {
-          "proposition": "Koloseum i Forum Romanum jako starożytne serce miasta.",
-          "explainer": [
-            "To starożytny amfiteatr z niesamowitą architekturą.",
-            "Niezwykle pobudza wyobraźnię syna i córki o starożytnych gladiatorach, stając się żywą lekcją historii.",
-            "Można zwiedzać wnętrze i dowiedzieć się więcej o realiach tamtych czasów."
-          ]
-        },
-        {
-          "proposition": "Fontanna di Trevi oraz wieczorny spacer po centrum.",
-          "explainer": [
-            "Jest to jedna z najbardziej znanych fontann na świecie.",
-            "Zgodnie z tradycją, wrzucenie monety zapewnia powrót do Rzymu, co jest świetną zabawą.",
-            "Po intensywnym dniu to idealne miejsce na spokojny wieczorny spacer z żoną."
-          ]
-        }
-      ],
-      "additional_notes": "Tradycyjne włoskie śniadania opierają się głównie na słodkich wypiekach (np. cornetto). Jeśli wolicie na start dnia proste, szybkie dania białkowe, najlepiej od razu zaopatrzyć się w lokalnym markecie w jajka czy skyr, by móc przygotować coś na szybko w miejscu zakwaterowania przed wyjściem w miasto."
+      "proposition": "Wprowadzenie automatycznej weryfikacji maili",
+      "explainer": [
+        "Skraca czas obsługi zgłoszeń przez pracowników o 30%.",
+        "Eliminuje błędy ludzkie przy ręcznej klasyfikacji.",
+        "Pozwala na natychmiastowe blokowanie znanych domen spamowych."
+      ]
+    },
+    {
+      "proposition": "Integracja z systemem CRM",
+      "explainer": [
+        "Umożliwia pełny wgląd w historię kontaktów z klientem.",
+        "Automatycznie aktualizuje dane w bazie po każdej interakcji."
+      ]
     }
-    '''
+  ]
+}
+'''
 
-# 5. Pobranie i walidacja danych (kompatybilność Pydantic V1 i V2)
-json_response = mock_llm_travel_plan()
-
+# 4. Parsowanie i walidacja
 try:
-    plan = TravelPlanner.model_validate_json(json_response)
+    data = TaskResponse.model_validate_json(mocked_llm_output)
 except AttributeError:
-    plan = TravelPlanner.parse_raw(json_response)
+    data = TaskResponse.parse_raw(mocked_llm_output)
 
-# 6. Formatowanie i wyświetlenie wyniku zgodnie ze zrzutem ekranu
-print("[Co warto odwiedzić?]\n")
-
-for dest in plan.destinations:
-    print(f"Propozycja: {dest.proposition}")
-    # Zamiana listy stringów na format z apostrofami, aby wyglądało jak w przykładzie
-    dlaczego_str = "['" + "', '".join(dest.explainer) + "']"
-    print(f"Dlaczego?: {dlaczego_str}\n")
-
-print("\n" + "="*50 + "\n")
-print("[Dodatkowe Notatki]\n", plan.additional_notes)
+# 5. Wyświetlenie wyników
+for item in data.propositions:
+    print(f"Propozycja: {item.proposition}")
+    print("Uzasadnienie:")
+    for point in item.explainer:
+        print(f" - {point}")
+    print("-" * 30)
