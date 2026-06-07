@@ -1,35 +1,47 @@
 import json
 
 system_prompt = """
-Wyodrębnij informacje z poniższej notatki medycznej i zwróć je WYŁĄCZNIE jako poprawny obiekt JSON.
-Wymagane klucze w formacie JSON:
-- "imię_i_nazwisko" (string)
-- "wiek" (liczba całkowita)
-- "objawy" (lista/tablica stringów)
-- "zalecenia" (string)
+Jesteś precyzyjnym asystentem kulinarnym. Otrzymasz listę składników z miarami domowymi (np. szklanki, łyżki).
+Twoim zadaniem jest przeliczenie tych miar na precyzyjne miary wagowe lub objętościowe (gramy dla ciał stałych, mililitry dla płynów).
+
+Zwróć WYŁĄCZNIE poprawny obiekt JSON.
+Struktura JSON:
+{
+  "zakupy": [
+    {"produkt": "nazwa", "ilość": liczba_całkowita, "jednostka": "g / ml / szt."}
+  ]
+}
 """
 
-notatka = "Pacjent: Jan Kowalski, lat 45. Zgłasza silny ból głowy od 3 dni oraz gorączkę do 39 stopni. Zalecono: Paracetamol 500mg, odpoczynek."
+lista_wejsciowa = """
+Oto lista zakupów:
+1 szklanka mąki pszennej
+2 szklanki mleka
+2 jajka
+3 łyżki oleju
+1 szczypta soli
+"""
 
-def mock_llm_call(prompt: str, user_message: str) -> str:
-    # Symulujemy odpowiedź modelu w wymuszonym trybie JSON
+def mock_llm_call(system: str, user: str) -> str:
+    # Symulujemy odpowiedź modelu, który poprawnie przeliczył szklanki i łyżki na gramy i mililitry
     return '''
     {
-      "imię_i_nazwisko": "Jan Kowalski",
-      "wiek": 45,
-      "objawy": [
-        "silny ból głowy od 3 dni",
-        "gorączka do 39 stopni"
-      ],
-      "zalecenia": "Paracetamol 500mg, odpoczynek"
+      "zakupy": [
+        {"produkt": "mąka pszenna", "ilość": 150, "jednostka": "g"},
+        {"produkt": "mleko", "ilość": 500, "jednostka": "ml"},
+        {"produkt": "jajka", "ilość": 2, "jednostka": "szt."},
+        {"produkt": "olej", "ilość": 45, "jednostka": "ml"},
+        {"produkt": "sól", "ilość": 1, "jednostka": "g"}
+      ]
     }
     '''
 
+# 1. Przekazanie promptu i danych użytkownika do "modelu"
+response_text = mock_llm_call(system_prompt, lista_wejsciowa)
 
-response_text = mock_llm_call(system_prompt, notatka)
-
-
+# 2. Odczytanie zwróconego tekstu jako pełnoprawny obiekt JSON
 wyekstrahowane_dane = json.loads(response_text)
 
-
+# 3. Wypisanie wyniku
+print("--- PRZELICZONA LISTA ZAKUPÓW ---")
 print(json.dumps(wyekstrahowane_dane, indent=2, ensure_ascii=False))
