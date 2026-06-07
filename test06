@@ -2,39 +2,45 @@ from pydantic import BaseModel, Field
 from enum import Enum
 from typing import List
 
-# 1. Definicja Enum dla atrybutów (ograniczenie wyboru modelu do konkretnych opcji)
+# 1. Definicja kategorii atrybutów dotyczących osób
 class AttributeName(str, Enum):
-    COLOR = "kolor"
-    SIZE = "rozmiar"
-    MATERIAL = "materiał"
-    BRAND = "marka"
+    ROLE = "rola"
+    DEPARTMENT = "dział"
+    SKILL = "umiejętność"
+    LOCATION = "lokalizacja"
+    EXPERIENCE = "doświadczenie"
+    SENIORITY = "poziom"
 
-# 2. Struktura dla pojedynczego atrybutu
-class Attribute(BaseModel):
-    name: AttributeName = Field(description="Nazwa atrybutu wybrana z listy")
-    value: str = Field(description="Wartość atrybutu wyekstrahowana z tekstu")
+# 2. Struktura dla pojedynczego atrybutu osoby
+class PersonAttribute(BaseModel):
+    name: AttributeName = Field(description="Kategoria atrybutu osoby")
+    value: str = Field(description="Wartość atrybutu (np. 'Programista', '5 lat')")
 
-# 3. Główna struktura zbierająca listę atrybutów
-class ProductAttributes(BaseModel):
-    attributes: List[Attribute]
+# 3. Główna struktura zbierająca atrybuty dla danej osoby
+class PersonAttributes(BaseModel):
+    attributes: List[PersonAttribute] = Field(..., description="Lista cech danej osoby")
 
-# 4. Symulacja odpowiedzi z modelu (zgodnie z formatem na screenach)
+# 4. Symulacja odpowiedzi LLM dla danych osobowych
 mocked_llm_output = '''
 {
   "attributes": [
-    {"name": "kolor", "value": "czerwony"},
-    {"name": "rozmiar", "value": "XL"},
-    {"name": "materiał", "value": "bawełna"}
+    {"name": "rola", "value": "Project Manager"},
+    {"name": "dział", "value": "IT"},
+    {"name": "umiejętność", "value": "Scrum, Agile"},
+    {"name": "lokalizacja", "value": "Łódź"},
+    {"name": "poziom", "value": "Senior"},
+    {"name": "doświadczenie", "value": "8 lat"}
   ]
 }
 '''
 
 # 5. Parsowanie i walidacja
 try:
-    product = ProductAttributes.model_validate_json(mocked_llm_output)
+    person = PersonAttributes.model_validate_json(mocked_llm_output)
 except AttributeError:
-    product = ProductAttributes.parse_raw(mocked_llm_output)
+    person = PersonAttributes.parse_raw(mocked_llm_output)
 
-# 6. Wyświetlenie wyników
-for attr in product.attributes:
-    print(f"{attr.name.value.capitalize()}: {attr.value}")
+# 6. Wyświetlenie profilu osoby
+print(f"=== PROFIL PRACOWNIKA ===")
+for attr in person.attributes:
+    print(f"{attr.name.value.capitalize():<15} : {attr.value}")
