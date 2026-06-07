@@ -1,26 +1,29 @@
-import json
 from pydantic import BaseModel
-from typing import List
+from openai import OpenAI
 
-# 1. Struktura dla pojedynczego składnika
+client = OpenAI()
+
 class Ingredient(BaseModel):
     name: str
-    amount: float
+    amount: int
     unit: str
 
-# 2. Struktura dla pojedynczego kroku przygotowania
 class Step(BaseModel):
     step_number: int
     description: str
 
-# 3. Główna struktura potrawy (zawiera listy składników i kroków)
-class Dish(BaseModel):
-    dish_name: str
-    ingredients: List[Ingredient]
-    steps: List[Step]
+class Recipe(BaseModel):
+    name: str
+    ingredients: list[Ingredient]
+    steps: list[Step]
 
-# Pobranie schematu JSON dla głównego modelu (Pydantic V2)
-schema = Dish.model_json_schema()
+completion = client.beta.chat.completions.parse(
+    model="gpt-4o-2024-08-06",
+    messages=[
+        {"role": "system", "content": "You are a helpful cooking assistant."},
+        {"role": "user", "content": "Provide a recipe for Spaghetti Carbonara."}
+    ],
+    response_format=Recipe,
+)
 
-# Wyświetlenie struktury na konsoli
-print(json.dumps(schema, indent=2))
+print(completion.choices[0].message.parsed)
