@@ -1,22 +1,30 @@
-from pydantic import RootModel
+from pydantic import BaseModel, RootModel
 from typing import List
 
-# Twój model atrybutu pozostaje bez zmian
+# 1. Definicja modelu pojedynczego atrybutu (tak jak wcześniej)
 class PersonAttribute(BaseModel):
     name: str
     value: str
 
-# KLUCZOWY ZMIANA: Używamy RootModel, żeby Pydantic wiedział, 
-# że oczekujemy listy na samym początku dokumentu JSON
+# 2. Używamy RootModel, aby poinformować Pydantic, 
+# że JSON jest listą obiektów, a nie obiektem z listą w środku
 class PersonList(RootModel):
     root: List[PersonAttribute]
 
-# Teraz, gdy przekażesz JSON w formie listy:
-mock_json = '[{"name": "rola", "value": "PM"}, {"name": "lokalizacja", "value": "Łódź"}]'
+# 3. Symulacja odpowiedzi AI, która zwraca całą listę wyników
+mocked_llm_output = '''
+[
+  {"name": "rola", "value": "PM"},
+  {"name": "lokalizacja", "value": "Łódź"},
+  {"name": "rola", "value": "Developer"},
+  {"name": "lokalizacja", "value": "Warszawa"}
+]
+'''
 
-# Pydantic poprawnie rozpozna, że to jest lista elementów
-results = PersonList.model_validate_json(mock_json)
+# 4. Parsowanie - teraz Pydantic zrozumie, że to lista
+data = PersonList.model_validate_json(mocked_llm_output)
 
-# Teraz możesz iterować po wynikach bezpośrednio:
-for item in results.root:
-    print(item.name, item.value)
+# 5. Iteracja po wielu wynikach
+print(f"Znaleziono {len(data.root)} wyników:\n")
+for item in data.root:
+    print(f"{item.name.capitalize()}: {item.value}")
