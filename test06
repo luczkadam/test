@@ -1,8 +1,6 @@
 from pydantic import BaseModel
-from openai import OpenAI
 
-client = OpenAI()
-
+# 1. Definicja zagnieżdżonych struktur (Nested Structures) z Twojego screena
 class Ingredient(BaseModel):
     name: str
     amount: int
@@ -17,13 +15,40 @@ class Recipe(BaseModel):
     ingredients: list[Ingredient]
     steps: list[Step]
 
-completion = client.beta.chat.completions.parse(
-    model="gpt-4o-2024-08-06",
-    messages=[
-        {"role": "system", "content": "You are a helpful cooking assistant."},
-        {"role": "user", "content": "Provide a recipe for Spaghetti Carbonara."}
-    ],
-    response_format=Recipe,
-)
+# 2. Symulacja odpowiedzi z modelu LLM (zamiast klienta OpenAI)
+# Dokładnie taki JSON zwróciłby model przy użyciu response_format=Recipe
+mocked_llm_response = '''
+{
+  "name": "Spaghetti Carbonara",
+  "ingredients": [
+    {"name": "makaron spaghetti", "amount": 200, "unit": "g"},
+    {"name": "guanciale lub boczek", "amount": 150, "unit": "g"},
+    {"name": "jajka (rozmiar L)", "amount": 3, "unit": "szt."},
+    {"name": "ser Pecorino Romano", "amount": 50, "unit": "g"}
+  ],
+  "steps": [
+    {"step_number": 1, "description": "Ugotuj makaron w osolonej wodzie al dente."},
+    {"step_number": 2, "description": "Pokrój guanciale i podsmaż na suchej patelni."},
+    {"step_number": 3, "description": "Wymieszaj jajka z serem w osobnej misce."},
+    {"step_number": 4, "description": "Wrzuć makaron na patelnię z mięsem, zdejmij z ognia, dodaj masę jajeczną i energicznie wymieszaj."}
+  ]
+}
+'''
 
-print(completion.choices[0].message.parsed)
+# 3. Parsowanie JSON-a bezpośrednio do obiektów Pydantic
+# Używamy try/except, aby kod zadziałał na Pydantic V1 oraz V2
+try:
+    parsed_recipe = Recipe.model_validate_json(mocked_llm_response) # Pydantic V2
+except AttributeError:
+    parsed_recipe = Recipe.parse_raw(mocked_llm_response)           # Pydantic V1
+
+# 4. Wyświetlenie zwalidowanych danych jako obiekty Pythona
+print(f"=== {parsed_recipe.name.upper()} ===\n")
+
+print("SKŁADNIKI:")
+for ing in parsed_recipe.ingredients:
+    print(f" - {ing.amount} {ing.unit} | {ing.name}")
+
+print("\nPRZYGOTOWANIE:")
+for step in parsed_recipe.steps:
+    print(f" {step.step_number}. {step.description}")
