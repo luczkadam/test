@@ -1,9 +1,1 @@
-python3.10 --version 2>/dev/null || python3.11 --version 2>/dev/null || python3.12 --version 2>/dev/null || echo "Brak Pythona 3.10+ w zmiennej PATH"
-
-
-
-command -v python3.10 python3.11 python3.12
-
-
-
-ps -eo rss,cmd | grep -iE '/opt/commvault|cvd|cvfwd|cvma' | grep -v grep | awk '{sum+=$1} END {print "Zużycie RAM przez Commvault: " sum/1024 " MB"}'
+#clear
