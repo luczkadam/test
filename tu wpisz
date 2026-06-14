@@ -1,33 +1,27 @@
 test example 6
-
+####
+🕒 Uptime: 10 weeks, 6 days, 3 hours, 46 minutes
 #!/bin/bash
 echo -e "\e[1;36m🕒 Uptime:\e[0m \e[1;32m$(uptime -p | sed 's/up //')\e[0m"
-
-
+####
+Wskazanemu użytkownikowi pozwala przetestować poprawność konfiguracji serwera Nginx z uprawnieniami administratora
 nazwa_uzytkownika ALL=(root) NOPASSWD: /usr/sbin/nginx -t
-
+####
+Wyświetlenia listy komend, które wskazany użytkownik może wykonać z uprawnieniami administratora. Jest to najszybszy sposób, aby zweryfikować, do jakich działań (np. zadeklarowanych w pliku /etc/sudoers) dane konto ma dostęp.
 sudo -l -U nazwa_uzytkownika
-
+####
 0 10 * * * df -hP /var >> ~/dane; date >> ~/dane
-
-
-
-while true; do echo quit | telnet 10.10.10.10 53 2>/dev/null | grep -q "Connected" && echo "Sieć jest osiągalna na porcie 53!"; sleep 5; done
-
-
-
 * * * * * echo "Nowehaslo123" | /usr/bin/passwd --stdin adam >/dev/null 2>&1
-
-
-
+####
+Co 5 sekund sprawdzaj dostępność 10.10.10.10 na port 53
+while true; do echo quit | telnet 10.10.10.10 53 2>/dev/null | grep -q "Connected" && echo "Sieć jest osiągalna na porcie 53!"; sleep 5; done
+####
+Jak długo działają usługi Docker i Containerd
 for usluga in docker containerd; do echo "${usluga^} uptime=$(systemctl status $usluga | awk -F'; ' '/Active:/ {print $2}' | sed -E 's/ ago| temu//')"; done
 
+####
 find /sciezka/do/katalogu -type f -newermt "2024-11-30 23:59:59" ! -newermt "2025-01-01 00:00:00"
-
-
 find /sciezka/do/katalogu -type f -newermt "2024-11-30 23:59:59" ! -newermt "2025-01-01 00:00:00" -exec gzip -9 {} \;
-
-
-
+####
 ls /sciezka/do/katalogu/Adam-{1..100}.out 2>/dev/null
 
