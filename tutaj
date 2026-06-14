@@ -4,3 +4,6 @@ python3.10 --version 2>/dev/null || python3.11 --version 2>/dev/null || python3.
 
 command -v python3.10 python3.11 python3.12
 
+
+
+ps -eo rss,cmd | grep -iE '/opt/commvault|cvd|cvfwd|cvma' | grep -v grep | awk '{sum+=$1} END {print "Zużycie RAM przez Commvault: " sum/1024 " MB"}'
